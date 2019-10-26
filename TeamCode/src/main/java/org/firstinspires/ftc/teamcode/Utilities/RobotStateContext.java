@@ -7,7 +7,7 @@ import static org.firstinspires.ftc.teamcode.Utilities.Executive.StateMachine.St
 
 public class RobotStateContext implements Executive.RobotStateMachineContextInterface {
 
-    AutoOpmode opMode;
+    RobotHardware opMode;
     Executive.StateMachine stateMachine;
     Color.Ftc teamColor;
     RobotHardware.StartPosition startPosition;
@@ -15,7 +15,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
     double driveSpeed = 0.8;
 
 
-    public RobotStateContext(AutoOpmode opMode, Color.Ftc teamColor, RobotHardware.StartPosition startPosition) {
+    public RobotStateContext(RobotHardware opMode, Color.Ftc teamColor, RobotHardware.StartPosition startPosition) {
         this.opMode = opMode;
         this.teamColor = teamColor;
         this.startPosition = startPosition;
@@ -42,12 +42,11 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
      */
 
 
-
     class Start_State extends Executive.StateBase {
         @Override
         public void update() {
             super.update();
-            if(stateTimer.seconds() > 1) {
+            if (stateTimer.seconds() > 1) {
                 opMode.mecanumNavigation.setCurrentPosition(new MecanumNavigation.Navigation2D(0, 0, 0));
                 opMode.imuUtilities.updateNow();
                 stateMachine.changeState(DRIVE, new Drive_somewhere());
@@ -59,9 +58,9 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         @Override
         public void update() {
             super.update();
-            if(stateTimer.seconds() > 1) {
-                arrived = opMode.autoDrive.rotateThenDriveToPosition(new MecanumNavigation.Navigation2D(12, 12, degreesToRadians(180)), driveSpeed);
-                if(arrived) {
+            if (stateTimer.seconds() > 1) {
+                arrived = opMode.autoDrive.rotateThenDriveToPosition(new MecanumNavigation.Navigation2D(12, 12, opMode.degreesToRadians(180)), driveSpeed);
+                if (arrived) {
                     stateMachine.changeState(DRIVE, new Stop_State());
                 }
             }
@@ -77,13 +76,4 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         }
     }
 
-
-
-    private double degreesToRadians(double degrees) {
-        return degrees * Math.PI / 180;
-    }
-
-    private double radiansToDegrees(double radians) {
-        return radians * 180 / Math.PI;
-    }
 }

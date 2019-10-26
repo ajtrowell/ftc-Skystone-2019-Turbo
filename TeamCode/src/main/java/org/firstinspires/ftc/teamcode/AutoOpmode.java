@@ -3,14 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.Utilities.CSV;
-import org.firstinspires.ftc.teamcode.Utilities.IMUUtilities;
-import org.firstinspires.ftc.teamcode.Utilities.InteractiveInit;
 import org.firstinspires.ftc.teamcode.Utilities.Mutable;
-import org.firstinspires.ftc.teamcode.Utilities.AutoDrive;
 import org.firstinspires.ftc.teamcode.Utilities.Color;
 import org.firstinspires.ftc.teamcode.Utilities.Constants;
-import org.firstinspires.ftc.teamcode.Utilities.Controller;
-import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation;
 import org.firstinspires.ftc.teamcode.Utilities.RobotStateContext;
 import org.firstinspires.ftc.teamcode.Utilities.TimingMonitor;
 
@@ -22,7 +17,6 @@ public class AutoOpmode extends RobotHardware {
     public RobotStateContext robotStateContext;
 //    public SimpleVision simpleVision;
     public Thread thread;
-    public IMUUtilities imuUtilities;
 
     // Telemetry Recorder
     private CSV csvWriter;
@@ -30,11 +24,9 @@ public class AutoOpmode extends RobotHardware {
     private boolean writeControls = false;
 
     //Interactive Init menu
-    private InteractiveInit interactiveInit = null;
     private Mutable<Boolean> Simple = new Mutable<>(false);
     private Mutable<Double> AutoDriveSpeed = new Mutable<>(0.5);
     private Mutable<Boolean> RecordTelemetry = new Mutable<>(false);
-    private Mutable<Boolean> useIMU = new Mutable<>(false);
     private Mutable<Boolean> earlyFlagDrop = new Mutable<>(false);
 
     @Autonomous(name="auto.Red.Pickup", group="Auto")
@@ -86,7 +78,6 @@ public class AutoOpmode extends RobotHardware {
         // Initialization Menu
         interactiveInit.addDouble(AutoDriveSpeed, "DriveSpeed",0.8,1.0,.1,.3,.5);
         interactiveInit.addBoolean(RecordTelemetry,"Record Telemetry", true, false);
-        interactiveInit.addBoolean(useIMU,"Use IMU", false, true);
         interactiveInit.addBoolean(Simple, "Simple Mode", true, false);
         interactiveInit.addBoolean(earlyFlagDrop, "Drop flag early", false, true);
     }
@@ -116,11 +107,6 @@ public class AutoOpmode extends RobotHardware {
             }
             recordConstantsToFile();
         }
-
-        if ( useIMU.get() ) {
-            // Only initialize the imu if it is going to be used.
-            imuUtilities = new IMUUtilities(this,"IMU_1");
-        }
     }
 
     @Override
@@ -135,7 +121,6 @@ public class AutoOpmode extends RobotHardware {
             imuUtilities.update();
             imuUtilities.getCompensatedHeading();
             timingMonitor.checkpoint("POST imuUtilities.update()");
-            telemetry.addData("descent rotation",imuUtilities.getHeadingChange());
         }
 
         // Conditional Telemetry Recording

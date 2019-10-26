@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.Utilities.IMUUtilities;
 import org.firstinspires.ftc.teamcode.Utilities.InteractiveInit;
 import org.firstinspires.ftc.teamcode.Utilities.Mecanum;
 import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation;
+import org.firstinspires.ftc.teamcode.Utilities.Mutable;
 import org.firstinspires.ftc.teamcode.Utilities.TimingMonitor;
 import org.firstinspires.ftc.teamcode.Utilities.VectorMath;
 
@@ -49,7 +50,10 @@ import java.util.Vector;
  *
  *  AutoDrive
  *
+ *  IMU Utilities
+ *
  */
+@SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class RobotHardware extends OpMode {
 
     // All motors on the robot, in order of MotorName.
@@ -74,7 +78,7 @@ public class RobotHardware extends OpMode {
 
     // Execution cycle period monitor.
     private ElapsedTime period = new ElapsedTime();
-    private Vector<Double> pastPeriods = new Vector<Double>();
+    private Vector<Double> pastPeriods = new Vector<>();
 
 
     // The motors on the robot.
@@ -172,7 +176,7 @@ public class RobotHardware extends OpMode {
      * RUN_TO_POSITION is used with setTargetPosition()
      * STOP_AND_RESET_ENCODER
      *
-     * @param runMode
+     * @param runMode DcMotor.RunMode enum
      */
     protected void setDriveMotorsRunMode(DcMotor.RunMode runMode) {
         for (MotorName motor : driveMotorNames) {
@@ -402,8 +406,7 @@ public class RobotHardware extends OpMode {
      * Gets the Vuforia license key.
      */
     protected String getVuforiaLicenseKey() {
-        String vuforiaLicenseKey = "AVFkXXL/////AAABmbZECMrRQkzRjDc4Fz5X9EwXnUQbKq9G/gERF/bpOt9TIpneSXsY3Qyv878mUAqY1coOvRiFFj/ZoK+uIs+qK3IHQUwgqJW6y9EhzwRNqcdzEHvrnttZnUJmWjBh0O93lrrC8mGzDw+/wozmT/jr1Peu4qOijWfYhgW2GGtszwl3/u6u9Pca43FcykCY52RsXcsGkM2/8z0Ini3hc/HxrWoKcYnycJf5yXLSxXWJz+vHVdnhu8Wen18HXX4ec9MA+P0psoVuUqtwZGpcXDEXSlk//Z1p9tN3vdBApm2fzdoYfGSqhLnN0gITvIPB3VMpXRUo0Zbb7QXCs0Ydh2EjPNTKlBFNGFewr+7Xhd2XVPcd";
-        return vuforiaLicenseKey;
+        return "AVFkXXL/////AAABmbZECMrRQkzRjDc4Fz5X9EwXnUQbKq9G/gERF/bpOt9TIpneSXsY3Qyv878mUAqY1coOvRiFFj/ZoK+uIs+qK3IHQUwgqJW6y9EhzwRNqcdzEHvrnttZnUJmWjBh0O93lrrC8mGzDw+/wozmT/jr1Peu4qOijWfYhgW2GGtszwl3/u6u9Pca43FcykCY52RsXcsGkM2/8z0Ini3hc/HxrWoKcYnycJf5yXLSxXWJz+vHVdnhu8Wen18HXX4ec9MA+P0psoVuUqtwZGpcXDEXSlk//Z1p9tN3vdBApm2fzdoYfGSqhLnN0gITvIPB3VMpXRUo0Zbb7QXCs0Ydh2EjPNTKlBFNGFewr+7Xhd2XVPcd";
     }
 
     // IMU Names (Could support multiple REV IMUs)
@@ -462,7 +465,7 @@ public class RobotHardware extends OpMode {
         }
 
         // Collect a list of only the drive motors.
-        driveMotorNames = new ArrayList<MotorName>();
+        driveMotorNames = new ArrayList<>();
         driveMotorNames.add(MotorName.DRIVE_FRONT_LEFT);
         driveMotorNames.add(MotorName.DRIVE_FRONT_RIGHT);
         driveMotorNames.add(MotorName.DRIVE_BACK_LEFT);
@@ -509,6 +512,14 @@ public class RobotHardware extends OpMode {
     }
 
 
+    public double degreesToRadians(double degrees) {
+        return degrees * Math.PI / 180;
+    }
+
+    public double radiansToDegrees(double radians) {
+        return radians * 180 / Math.PI;
+    }
+
     //Setup custom opmode members
     //Setting controller variables
     public Controller controller1 = null;
@@ -516,13 +527,15 @@ public class RobotHardware extends OpMode {
     public InteractiveInit interactiveInit = null;
     public MecanumNavigation mecanumNavigation;
     public AutoDrive autoDrive;
-
+    public IMUUtilities imuUtilities;
+    public Mutable<Boolean> useIMU = new Mutable<>(false);
 
     public void init() {
         hardwareInit();
         controller1 = new Controller (gamepad1);
         controller2 = new Controller (gamepad2);
         interactiveInit = new InteractiveInit(this);
+        interactiveInit.addBoolean(useIMU,"Use IMU", false, true);
     }
 
     public void init_loop() {
@@ -537,6 +550,13 @@ public class RobotHardware extends OpMode {
         mecanumNavigation.initialize(new MecanumNavigation.Navigation2D(0, 0, 0));
         autoDrive = new AutoDrive(this, mecanumNavigation);
         interactiveInit.lock();
+
+        if ( useIMU.get() ) {
+            imuUtilities = new IMUUtilities(this,"IMU_1");
+            imuUtilities.updateNow();
+            imuUtilities.setCompensatedHeading(radiansToDegrees(0));
+            imuUtilities.setInitialHeading(); // Records starting heading for comparison.
+        }
     }
 
     public void loop() {
