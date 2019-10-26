@@ -12,21 +12,16 @@ import org.firstinspires.ftc.teamcode.Utilities.Constants;
 import org.firstinspires.ftc.teamcode.Utilities.Controller;
 import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation;
 import org.firstinspires.ftc.teamcode.Utilities.RobotStateContext;
-import org.firstinspires.ftc.teamcode.Utilities.SimpleVision;
-import org.firstinspires.ftc.teamcode.Utilities.SoundManager;
 import org.firstinspires.ftc.teamcode.Utilities.TimingMonitor;
 
 public class AutoOpmode extends RobotHardware {
 
     public TimingMonitor timingMonitor;
-    public MecanumNavigation mecanumNavigation;
-    public AutoDrive autoDrive;
     protected Color.Ftc robotColor;
     protected StartPosition robotStartPos;
     public RobotStateContext robotStateContext;
 //    public SimpleVision simpleVision;
     public Thread thread;
-    public Controller controller;
     public IMUUtilities imuUtilities;
 
     // Telemetry Recorder
@@ -82,7 +77,6 @@ public class AutoOpmode extends RobotHardware {
     public void init() {
         super.init();
         timingMonitor = new TimingMonitor(AutoOpmode.this);
-        controller = new Controller(gamepad1);
         thread = new Thread(new VisionLoader());
         thread.start();
         robotStateContext = new RobotStateContext(AutoOpmode.this, robotColor, robotStartPos);
@@ -90,7 +84,6 @@ public class AutoOpmode extends RobotHardware {
         telemetry.addData("Initialization:", "Successful!");
 
         // Initialization Menu
-        interactiveInit = new InteractiveInit(this);
         interactiveInit.addDouble(AutoDriveSpeed, "DriveSpeed",0.8,1.0,.1,.3,.5);
         interactiveInit.addBoolean(RecordTelemetry,"Record Telemetry", true, false);
         interactiveInit.addBoolean(useIMU,"Use IMU", false, true);
@@ -101,32 +94,17 @@ public class AutoOpmode extends RobotHardware {
     @Override
     public void init_loop() {
         super.init_loop();
-        controller.update();
 
 //        if (simpleVision == null) {
 //            telemetry.addData("Vision:", "LOADING...");
 //        } else {
 //            telemetry.addData("Vision:", "INITIALIZED");
 //        }
-
-        interactiveInit.update();
-        //Maintain lift winch position while hanging.
     }
 
     @Override
     public void start() {
-        super.init();
-
-        // Navigation and control
-        mecanumNavigation = new MecanumNavigation(this,Constants.getDriveTrainMecanum());
-        mecanumNavigation.initialize(new MecanumNavigation.Navigation2D(0, 0, 0));
-        autoDrive = new AutoDrive(this, mecanumNavigation);
-
-        // Ensure starting position at origin, even if wheels turned since initialize.
-        mecanumNavigation.update();
-        mecanumNavigation.setCurrentPosition(new MecanumNavigation.Navigation2D(0,0,0));
-
-        interactiveInit.lock();
+        super.start();
 
         if(RecordTelemetry.get()) {
             csvWriter = new CSV(this);
@@ -148,13 +126,9 @@ public class AutoOpmode extends RobotHardware {
     @Override
     public void loop() {
         timingMonitor.loopStart();
-        if(controller.start()) { timingMonitor.reset();} // Clear with start button
+        if(controller1.start()) { timingMonitor.reset();} // Clear with start button
         super.loop();
         timingMonitor.checkpoint("POST super.loop()");
-        controller.update();
-        timingMonitor.checkpoint("POST controller.update()");
-        mecanumNavigation.update();
-        timingMonitor.checkpoint("POST mecanumNavigation.update()");
         robotStateContext.update();
         timingMonitor.checkpoint("POST robotStateMachine.update()");
         if ( useIMU.get() ) {
@@ -173,7 +147,10 @@ public class AutoOpmode extends RobotHardware {
             timingMonitor.checkpoint("POST telemetry recorder");
         }
 
+        // Telemetry
         mecanumNavigation.displayPosition();
+        telemetry.addLine();
+        telemetry.addData("State:", robotStateContext.getCurrentState());
         telemetry.addLine();
         telemetry.addData("Period Average (sec)", df_prec.format(getAveragePeriodSec()));
         telemetry.addData("Period Max (sec)", df_prec.format(getMaxPeriodSec()));
@@ -227,22 +204,22 @@ public class AutoOpmode extends RobotHardware {
     private void writeControlsToFile() {
         controlWriter.addFieldToRecord("time",time);
 
-        controlWriter.addFieldToRecord("left_stick_x",controller.left_stick_x);
-        controlWriter.addFieldToRecord("left_stick_y",controller.left_stick_y);
-        controlWriter.addFieldToRecord("right_stick_x",controller.right_stick_x);
-        controlWriter.addFieldToRecord("right_stick_y",controller.right_stick_y);
-        controlWriter.addFieldToRecord("left_trigger",controller.left_trigger);
-        controlWriter.addFieldToRecord("right_trigger",controller.right_trigger);
+        controlWriter.addFieldToRecord("left_stick_x", controller1.left_stick_x);
+        controlWriter.addFieldToRecord("left_stick_y", controller1.left_stick_y);
+        controlWriter.addFieldToRecord("right_stick_x", controller1.right_stick_x);
+        controlWriter.addFieldToRecord("right_stick_y", controller1.right_stick_y);
+        controlWriter.addFieldToRecord("left_trigger", controller1.left_trigger);
+        controlWriter.addFieldToRecord("right_trigger", controller1.right_trigger);
 
-        controlWriter.addFieldToRecord("right_stick_button",controller.rightStickButton() ? 1.0 : 0.0);
-        controlWriter.addFieldToRecord("left_stick_button",controller.leftStickButton() ? 1.0 : 0.0);
-        controlWriter.addFieldToRecord("right_bumper",controller.rightBumper() ? 1.0 : 0.0);
-        controlWriter.addFieldToRecord("left_bumper",controller.leftBumper() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("right_stick_button", controller1.rightStickButton() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("left_stick_button", controller1.leftStickButton() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("right_bumper", controller1.rightBumper() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("left_bumper", controller1.leftBumper() ? 1.0 : 0.0);
 
-        controlWriter.addFieldToRecord("a_button",controller.A() ? 1.0 : 0.0);
-        controlWriter.addFieldToRecord("b_button",controller.B() ? 1.0 : 0.0);
-        controlWriter.addFieldToRecord("x_button",controller.X() ? 1.0 : 0.0);
-        controlWriter.addFieldToRecord("y_button",controller.Y() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("a_button", controller1.A() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("b_button", controller1.B() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("x_button", controller1.X() ? 1.0 : 0.0);
+        controlWriter.addFieldToRecord("y_button", controller1.Y() ? 1.0 : 0.0);
 
         controlWriter.completeRecord();
     }

@@ -9,8 +9,15 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.teamcode.Utilities.AutoDrive;
 import org.firstinspires.ftc.teamcode.Utilities.Color;
+import org.firstinspires.ftc.teamcode.Utilities.Constants;
+import org.firstinspires.ftc.teamcode.Utilities.Controller;
+import org.firstinspires.ftc.teamcode.Utilities.IMUUtilities;
+import org.firstinspires.ftc.teamcode.Utilities.InteractiveInit;
 import org.firstinspires.ftc.teamcode.Utilities.Mecanum;
+import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation;
+import org.firstinspires.ftc.teamcode.Utilities.TimingMonitor;
 import org.firstinspires.ftc.teamcode.Utilities.VectorMath;
 
 import java.text.DecimalFormat;
@@ -18,6 +25,31 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
+/**
+ *  RobotHardware Features
+ *  Controller class objects controller1 and controller2 can be used to access the gamepads,
+ *  with options for detecting buttonDownOnce
+ *
+ *  InteractiveInit menu can be used to change Double,Boolean, or String typed Mutable objects from a
+ *  gamepad controlled initialization menu.
+ *  Define the Mutable as an opmode class member variable:
+ *  Mutable<Double> DriveSpeed = new Mutable<>(1.0);
+ *  Then, within opmode.init(),  add the Mutable member interactiveInit within its options:
+ *  init() {
+ *      super.init();
+ *      interactiveInit.addDouble(DriveSpeed, "Slow Mode Multiplier",  0.25, 0.5, 0.75, 1.0);
+ *  }
+ *  RobotHardware.start() will run the interactiveInit.lock() function, freezing init values.
+ *  Then, use these Mutable values within any code after init_loop:
+ *  double driveSpeed = DriveSpeed.get();
+ *
+ *  Time Utilities: getAveragePeriodSec(),   getMaxPeriodSec(),  getLastPeriodSec()
+ *
+ *  MecanumNavigation
+ *
+ *  AutoDrive
+ *
+ */
 public class RobotHardware extends OpMode {
 
     // All motors on the robot, in order of MotorName.
@@ -63,9 +95,7 @@ public class RobotHardware extends OpMode {
         }
 
         public DcMotor.Direction getDirection() {return direction;}
-
         public DcMotor.ZeroPowerBehavior getZeroPowerBehavior() {return zeroPowerBehavior;}
-
         public DcMotor.RunMode getRunMode() {return runMode;}
     }
 
@@ -413,7 +443,7 @@ public class RobotHardware extends OpMode {
     }
 
 
-    public void init() {
+    private void hardwareInit() {
 
         // Creates a list of all valid DcMotors and initializes their
         // Direction, ZeroPowerBehavior, and RunMode( with or without Encoder)
@@ -478,13 +508,42 @@ public class RobotHardware extends OpMode {
         period.reset(); // Reset timer
     }
 
+
+    //Setup custom opmode members
+    //Setting controller variables
+    public Controller controller1 = null;
+    public Controller controller2 = null;
+    public InteractiveInit interactiveInit = null;
+    public MecanumNavigation mecanumNavigation;
+    public AutoDrive autoDrive;
+
+
+    public void init() {
+        hardwareInit();
+        controller1 = new Controller (gamepad1);
+        controller2 = new Controller (gamepad2);
+        interactiveInit = new InteractiveInit(this);
+    }
+
+    public void init_loop() {
+        interactiveInit.update();
+    }
+
     public void start() {
         stopAllMotors();
         period.reset(); // Reset timer
+        // MecanumNavigation and auto control
+        mecanumNavigation = new MecanumNavigation(this, Constants.getDriveTrainMecanum());
+        mecanumNavigation.initialize(new MecanumNavigation.Navigation2D(0, 0, 0));
+        autoDrive = new AutoDrive(this, mecanumNavigation);
+        interactiveInit.lock();
     }
 
     public void loop() {
         updatePeriodTime();
+        controller1.update();
+        controller2.update();
+        mecanumNavigation.update();
     }
 
     public void stop() {
