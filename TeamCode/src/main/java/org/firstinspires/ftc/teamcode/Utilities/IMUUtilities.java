@@ -30,13 +30,13 @@ public class IMUUtilities {
     public double yAccel;
     public double zAccel;
 
-    protected RobotHardware opMode;
-    protected Orientation angles;
-    protected Acceleration gravity;
-    protected Acceleration acceleration;
+    private RobotHardware opMode;
+    private Orientation angles;
+    private Acceleration gravity;
+    private Acceleration acceleration;
 
-    protected BNO055IMU.SystemStatus imuSystemStatus;
-    protected BNO055IMU.CalibrationStatus imuCalibrationStatus;
+    private BNO055IMU.SystemStatus imuSystemStatus;
+    private BNO055IMU.CalibrationStatus imuCalibrationStatus;
 
     private double lastUpdateSec = 0;
     private double minUpdateDelay = 1.0; // Seconds

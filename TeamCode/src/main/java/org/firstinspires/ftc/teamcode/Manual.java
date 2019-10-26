@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.Utilities.AutoDrive;
 import org.firstinspires.ftc.teamcode.Utilities.Constants;
+import org.firstinspires.ftc.teamcode.Utilities.Executive;
 import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation;
 import org.firstinspires.ftc.teamcode.Utilities.Mutable;
 
@@ -22,6 +24,8 @@ public class Manual extends RobotHardware {
     private double exponential;
     private double driveSpeed;
 
+    private Executive.StateMachine manualState;
+
     @Override
     public void init() {
         super.init();
@@ -29,6 +33,10 @@ public class Manual extends RobotHardware {
         interactiveInit.addDouble(DriveSpeed, "Slow Mode Multiplier",  0.25, 0.5, 0.75, 1.0);
         interactiveInit.addDouble(Exponential, "Exponential", 3.0, 1.0);
         interactiveInit.addBoolean(CoPilot, "Copilot Enable", false, true);
+
+        manualState = new Executive.StateMachine(this);
+        manualState.changeState(Executive.StateMachine.StateType.DRIVE, new ManualState());
+        manualState.init();
     }
 
     @Override
@@ -51,16 +59,22 @@ public class Manual extends RobotHardware {
 
         // Telemetry
         mecanumNavigation.displayPosition();
-
-        // Mecanum Drive Control
-        setDriveForSimpleMecanum(Math.pow(controller1.left_stick_x, exponential) * driveSpeed,
-                Math.pow(controller1.left_stick_y, exponential) * driveSpeed,
-                Math.pow(controller1.right_stick_x, exponential) * driveSpeed,
-                Math.pow(controller1.right_stick_y, exponential) * driveSpeed);
-
-        nonDriveControls();
+        manualState.update();
     }
 
+
+    public class ManualState extends Executive.StateBase {
+        @Override
+        public void update() {
+            super.update();
+            // Mecanum Drive Control
+            setDriveForSimpleMecanum(Math.pow(controller1.left_stick_x, exponential) * driveSpeed,
+                    Math.pow(controller1.left_stick_y, exponential) * driveSpeed,
+                    Math.pow(controller1.right_stick_x, exponential) * driveSpeed,
+                    Math.pow(controller1.right_stick_y, exponential) * driveSpeed);
+            nonDriveControls();             
+        }
+    }
 
     private void nonDriveControls() {
         // Based on copilotEnabled, sets controls for
