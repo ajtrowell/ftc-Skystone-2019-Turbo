@@ -72,7 +72,7 @@ public class Manual extends RobotHardware {
                     Math.pow(controller1.left_stick_y, exponential) * driveSpeed,
                     Math.pow(controller1.right_stick_x, exponential) * driveSpeed,
                     Math.pow(controller1.right_stick_y, exponential) * driveSpeed);
-            nonDriveControls();             
+            nonDriveControls();
         }
     }
 

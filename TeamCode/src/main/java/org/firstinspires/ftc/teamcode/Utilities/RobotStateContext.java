@@ -8,7 +8,7 @@ import static org.firstinspires.ftc.teamcode.Utilities.Executive.StateMachine.St
 
 public class RobotStateContext implements Executive.RobotStateMachineContextInterface {
 
-    RobotHardware opMode;
+    AutoOpmode opMode;
     Executive.StateMachine stateMachine;
     Color.Ftc teamColor;
     RobotHardware.StartPosition startPosition;
@@ -16,7 +16,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
     double driveSpeed = 0.8;
 
 
-    public RobotStateContext(RobotHardware opMode, Color.Ftc teamColor, RobotHardware.StartPosition startPosition) {
+    public RobotStateContext(AutoOpmode opMode, Color.Ftc teamColor, RobotHardware.StartPosition startPosition) {
         this.opMode = opMode;
         this.teamColor = teamColor;
         this.startPosition = startPosition;
@@ -28,6 +28,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         stateMachine.changeState(DRIVE, new Start_State());
 //        stateMachine.changeState(Executive.StateMachine.StateType.ARM, new ArmLevelState());
         stateMachine.init();
+        driveSpeed = opMode.AutoDriveSpeed.get();
     }
 
     public void update() {

@@ -512,6 +512,17 @@ public class RobotHardware extends OpMode {
     }
 
 
+    public void updateMecanumHeadingFromGyroNow() {
+        if (useIMU.get()) {
+            // Modify current position to account for rotation during descent measured by gyro.
+            imuUtilities.updateNow();
+            double gyroHeading = imuUtilities.getCompensatedHeading();
+            MecanumNavigation.Navigation2D currentPosition = mecanumNavigation.currentPosition.copy();
+            currentPosition.theta = degreesToRadians(gyroHeading);
+            mecanumNavigation.setCurrentPosition(currentPosition);
+        }
+    }
+
     public double degreesToRadians(double degrees) {
         return degrees * Math.PI / 180;
     }

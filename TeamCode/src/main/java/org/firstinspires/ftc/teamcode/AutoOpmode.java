@@ -3,10 +3,12 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.Utilities.CSV;
+import org.firstinspires.ftc.teamcode.Utilities.Executive;
 import org.firstinspires.ftc.teamcode.Utilities.Mutable;
 import org.firstinspires.ftc.teamcode.Utilities.Color;
 import org.firstinspires.ftc.teamcode.Utilities.Constants;
 import org.firstinspires.ftc.teamcode.Utilities.RobotStateContext;
+import org.firstinspires.ftc.teamcode.Utilities.BehaviorSandbox;
 import org.firstinspires.ftc.teamcode.Utilities.TimingMonitor;
 
 public class AutoOpmode extends RobotHardware {
@@ -14,7 +16,7 @@ public class AutoOpmode extends RobotHardware {
     public TimingMonitor timingMonitor;
     protected Color.Ftc robotColor;
     protected StartPosition robotStartPos;
-    public RobotStateContext robotStateContext;
+    public Executive.RobotStateMachineContextInterface robotStateContext;
 //    public SimpleVision simpleVision;
     public Thread thread;
 
@@ -24,10 +26,10 @@ public class AutoOpmode extends RobotHardware {
     private boolean writeControls = false;
 
     //Interactive Init menu
-    private Mutable<Boolean> Simple = new Mutable<>(false);
-    private Mutable<Double> AutoDriveSpeed = new Mutable<>(0.5);
-    private Mutable<Boolean> RecordTelemetry = new Mutable<>(false);
-    private Mutable<Boolean> earlyFlagDrop = new Mutable<>(false);
+    public Mutable<Boolean> Simple = new Mutable<>(false);
+    public Mutable<Double> AutoDriveSpeed = new Mutable<>(0.5);
+    public Mutable<Boolean> RecordTelemetry = new Mutable<>(false);
+    public Mutable<Boolean> earlyFlagDrop = new Mutable<>(false);
 
     @Autonomous(name="auto.Red.Pickup", group="Auto")
     public static class AutoRedPickup extends AutoOpmode {
@@ -65,13 +67,27 @@ public class AutoOpmode extends RobotHardware {
         }
     }
 
+    @Autonomous(name="AutoSandbox", group="Testing")
+    public static class AutoSandbox extends AutoOpmode {
+        @Override public void init() {
+            robotColor = Color.Ftc.UNKNOWN;
+            robotStartPos = StartPosition.FIELD_PICKUP;
+            super.init();
+        }
+    }
+
     @Override
     public void init() {
         super.init();
         timingMonitor = new TimingMonitor(AutoOpmode.this);
         thread = new Thread(new VisionLoader());
         thread.start();
-        robotStateContext = new RobotStateContext(AutoOpmode.this, robotColor, robotStartPos);
+        if(robotColor == Color.Ftc.UNKNOWN) {
+            robotStateContext = new BehaviorSandbox(AutoOpmode.this, robotColor, robotStartPos);
+        } else {
+            robotStateContext = new RobotStateContext(AutoOpmode.this, robotColor, robotStartPos);
+        }
+
         robotStateContext.init();
         telemetry.addData("Initialization:", "Successful!");
 
