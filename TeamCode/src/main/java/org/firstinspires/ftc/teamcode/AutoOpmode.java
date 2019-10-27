@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Utilities.Color;
 import org.firstinspires.ftc.teamcode.Utilities.Constants;
 import org.firstinspires.ftc.teamcode.Utilities.RobotStateContext;
 import org.firstinspires.ftc.teamcode.Utilities.BehaviorSandbox;
+import org.firstinspires.ftc.teamcode.Utilities.SimpleVision;
 import org.firstinspires.ftc.teamcode.Utilities.TimingMonitor;
 
 public class AutoOpmode extends RobotHardware {
@@ -17,7 +18,7 @@ public class AutoOpmode extends RobotHardware {
     protected Color.Ftc robotColor;
     protected StartPosition robotStartPos;
     public Executive.RobotStateMachineContextInterface robotStateContext;
-//    public SimpleVision simpleVision;
+    public SimpleVision simpleVision;
     public Thread thread;
 
     // Telemetry Recorder
@@ -102,11 +103,11 @@ public class AutoOpmode extends RobotHardware {
     public void init_loop() {
         super.init_loop();
 
-//        if (simpleVision == null) {
-//            telemetry.addData("Vision:", "LOADING...");
-//        } else {
-//            telemetry.addData("Vision:", "INITIALIZED");
-//        }
+        if (simpleVision == null) {
+            telemetry.addData("Vision:", "LOADING...");
+        } else {
+            telemetry.addData("Vision:", "INITIALIZED");
+        }
     }
 
     @Override
@@ -159,8 +160,8 @@ public class AutoOpmode extends RobotHardware {
         timingMonitor.checkpoint("POST TELEMETRY");
 
         try {
-//            simpleVision.updateTensorFlow(true);
-//            simpleVision.displayTensorFlowDetections();
+            simpleVision.updateTensorFlow(true);
+            simpleVision.displayTensorFlowDetections();
         } catch(Exception e) {
             telemetry.addData("Vision Not Loaded", "");
         }
@@ -180,9 +181,11 @@ public class AutoOpmode extends RobotHardware {
     // Initialize vuforia in a separate thread to avoid init() hangups.
     class VisionLoader implements Runnable {
         public void run() {
-//            simpleVision = new SimpleVision(getVuforiaLicenseKey(), AutoOpmode.this,
-//                    false, true,false,
-//                    false, false);
+
+            //TODO Might need to use trackables, the second to last boolean.
+            simpleVision = new SimpleVision(getVuforiaLicenseKey(), AutoOpmode.this,
+                    false, true,false,
+                    true, false);
         }
     }
 
