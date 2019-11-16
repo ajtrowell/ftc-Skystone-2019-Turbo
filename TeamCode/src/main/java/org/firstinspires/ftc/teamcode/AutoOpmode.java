@@ -43,6 +43,7 @@ public class AutoOpmode extends RobotHardware {
         @Override public void init() {
             robotColor = Color.Ftc.RED;
             robotStartPos = StartPosition.FIELD_LOADING;
+            robotStateContext = new RobotStateContext(this, robotColor, robotStartPos);
             super.init();
         }
     }
@@ -52,6 +53,7 @@ public class AutoOpmode extends RobotHardware {
         @Override public void init() {
             robotColor = Color.Ftc.RED;
             robotStartPos = StartPosition.FIELD_BUILD;
+            robotStateContext = new RobotStateContext(this, robotColor, robotStartPos);
             super.init();
         }
     }
@@ -61,6 +63,7 @@ public class AutoOpmode extends RobotHardware {
         @Override public void init() {
             robotColor = Color.Ftc.BLUE;
             robotStartPos = StartPosition.FIELD_LOADING;
+            robotStateContext = new RobotStateContext(this, robotColor, robotStartPos);
             super.init();
         }
     }
@@ -70,6 +73,7 @@ public class AutoOpmode extends RobotHardware {
         @Override public void init() {
             robotColor = Color.Ftc.BLUE;
             robotStartPos = StartPosition.FIELD_BUILD;
+            robotStateContext = new RobotStateContext(this, robotColor, robotStartPos);
             super.init();
         }
     }
@@ -77,8 +81,9 @@ public class AutoOpmode extends RobotHardware {
     @Autonomous(name="auto.Sandbox", group="Test")
     public static class Sandbox extends AutoOpmode {
         @Override public void init() {
-            robotColor = Color.Ftc.UNKNOWN;
+            robotColor = Color.Ftc.BLUE;
             robotStartPos = StartPosition.FIELD_LOADING;
+            robotStateContext = new BehaviorSandBox(this,robotColor, robotStartPos);
             super.init();
         }
     }
@@ -86,18 +91,12 @@ public class AutoOpmode extends RobotHardware {
     @Override
     public void init() {
         super.init();
-        timingMonitor = new TimingMonitor(AutoOpmode.this);
+        timingMonitor = new TimingMonitor(this);
         timingMonitor.disable();
         controller1 = new Controller(gamepad1);
         thread = new Thread(new VisionLoader());
         thread.start();
-        // Only initialize the imu if it is going to be used.
         imuUtilities = new IMUUtilities(this,"IMU_1");
-        if(!robotColor.equals(Color.Ftc.UNKNOWN)) {
-            robotStateContext = new RobotStateContext(AutoOpmode.this, robotColor, robotStartPos);
-        } else {
-            robotStateContext = new BehaviorSandBox(AutoOpmode.this, Color.Ftc.BLUE, robotStartPos);
-        }
         telemetry.addData("Initialization: ", "Successful!");
 
         // Initialization Menu

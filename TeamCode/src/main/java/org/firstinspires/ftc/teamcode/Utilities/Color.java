@@ -8,7 +8,6 @@ public class Color {
     public enum Ftc {
         RED,
         BLUE,
-        UNKNOWN,
     }
 	
 	public enum StoneType {
