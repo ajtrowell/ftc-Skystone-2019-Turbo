@@ -205,6 +205,19 @@ public class MecanumNavigation {
             this.theta -= other.theta;
         }
 
+        public Navigation2D subtractAndReturn(Navigation2D other) {
+            return new Navigation2D(this.x - other.x, this.y - other.y, this.theta - other.theta);
+        }
+
+        // Linear multiplier, changes the magnitude.
+        public Navigation2D multiplyAndReturn(double multiplier) {
+            return new Navigation2D(this.x * multiplier, this.y * multiplier, this.theta);
+        }
+
+        public double getMagnitude() {
+            return  Math.sqrt(Math.pow(this.x,2) + Math.pow(this.y,2));
+        }
+
         /**
          * Returns this object minus argument.
          * @param other Navigation2D object
