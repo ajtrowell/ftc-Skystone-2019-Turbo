@@ -14,6 +14,7 @@ public class AutoDrive {
 
     private RobotHardware opMode;
     private MecanumNavigation mecanumNavigation;
+    public AccelerationLimiter accelerationLimiter = new AccelerationLimiter(1,1);
 
 
     public AutoDrive(RobotHardware opMode, MecanumNavigation mecanumNavigation) {

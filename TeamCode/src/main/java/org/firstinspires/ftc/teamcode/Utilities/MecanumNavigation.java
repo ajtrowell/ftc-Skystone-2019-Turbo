@@ -46,11 +46,12 @@ public class MecanumNavigation {
     }
 
     public void update() {
-        update(new MecanumNavigation.WheelTicks(
+        WheelTicks newWheelTicks = new WheelTicks(
                 opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_FRONT_LEFT),
                 opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_FRONT_RIGHT),
                 opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_BACK_LEFT),
-                opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_BACK_RIGHT)));
+                opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_BACK_RIGHT));
+        update(newWheelTicks);
     }
 
     public void displayPosition() {
