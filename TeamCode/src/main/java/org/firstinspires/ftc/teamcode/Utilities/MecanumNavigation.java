@@ -46,11 +46,12 @@ public class MecanumNavigation {
     }
 
     public void update() {
-        update(new MecanumNavigation.WheelTicks(
+        WheelTicks newWheelTicks = new WheelTicks(
                 opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_FRONT_LEFT),
                 opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_FRONT_RIGHT),
                 opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_BACK_LEFT),
-                opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_BACK_RIGHT)));
+                opMode.getEncoderValue(RobotHardware.MotorName.DRIVE_BACK_RIGHT));
+        update(newWheelTicks);
     }
 
     public void displayPosition() {
@@ -87,6 +88,12 @@ public class MecanumNavigation {
      * @return Wheels power object, scaled to 1.
      */
     public Mecanum.Wheels deltaWheelsFromPosition(Navigation2D targetPosition) {
+        Mecanum.Command command = deltaCommandFromPosition(targetPosition);
+        return deltaWheelsFromBodyRelativeMotion(new Navigation2D(command.vx, command.vy, command.av));
+    }
+
+    //
+    public Mecanum.Command deltaCommandFromPosition(Navigation2D targetPosition) {
         double deltaX = targetPosition.x - currentPosition.x;
         double deltaY = targetPosition.y - currentPosition.y;
         double deltaTheta = targetPosition.theta - currentPosition.theta;
@@ -94,8 +101,7 @@ public class MecanumNavigation {
         double bodyX = deltaX * Math.cos(currentPosition.theta) + deltaY * Math.sin(currentPosition.theta);
         double bodyY = -deltaX * Math.sin(currentPosition.theta) + deltaY * Math.cos(currentPosition.theta);
         double bodyTheta = deltaTheta;
-
-        return deltaWheelsFromBodyRelativeMotion(new Navigation2D(bodyX, bodyY, bodyTheta));
+        return new Mecanum.Command(bodyX,bodyY, bodyTheta);
     }
 
 
@@ -109,7 +115,7 @@ public class MecanumNavigation {
     public Mecanum.Wheels deltaWheelsFromBodyRelativeMotion(Navigation2D bodyRelativeMovement) {
         double deltaX = bodyRelativeMovement.x;
         double deltaY = bodyRelativeMovement.y;
-        deltaY /= driveTrainMecanum.lateralScaling;
+        deltaY /= driveTrainMecanum.lateralScaling;  // Should this be *= ?
         double deltaTheta = bodyRelativeMovement.theta;
 
         double K = driveTrainMecanum.getK();
@@ -125,6 +131,12 @@ public class MecanumNavigation {
         Mecanum.Wheels wheels =  new Mecanum.Wheels(frontLeft, frontRight, backLeft, backRight);
         wheels.coupledScaleToOne();
         return wheels;
+    }
+
+    // Overload for Mecanum.Command
+    public Mecanum.Wheels deltaWheelsFromBodyRelativeMotion(Mecanum.Command bodyRelativeMovementCommand) {
+        return deltaWheelsFromBodyRelativeMotion(new Navigation2D(bodyRelativeMovementCommand.vx,
+                bodyRelativeMovementCommand.vy,bodyRelativeMovementCommand.av));
     }
 
 
@@ -203,6 +215,19 @@ public class MecanumNavigation {
             this.x -= other.x;
             this.y -= other.y;
             this.theta -= other.theta;
+        }
+
+        public Navigation2D subtractAndReturn(Navigation2D other) {
+            return new Navigation2D(this.x - other.x, this.y - other.y, this.theta - other.theta);
+        }
+
+        // Linear multiplier, changes the magnitude.
+        public Navigation2D multiplyAndReturn(double multiplier) {
+            return new Navigation2D(this.x * multiplier, this.y * multiplier, this.theta);
+        }
+
+        public double getMagnitude() {
+            return  Math.sqrt(Math.pow(this.x,2) + Math.pow(this.y,2));
         }
 
         /**
