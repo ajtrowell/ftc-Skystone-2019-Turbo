@@ -22,20 +22,20 @@ public class AccelerationLimiter {
     double previousTime = 0;
 //    double currentTime = 0;
 
-    Navigation2D previousVelocityAndRotation;
-    Navigation2D requestedVelocityAndRotation;
-    Navigation2D newVelocityAndRotation;
+    Navigation2D previousVelocityAndRotationOutput = new Navigation2D(0,0,0);
+    Navigation2D requestedVelocityAndRotation = new Navigation2D(0,0,0);
+    Navigation2D newVelocityAndRotationOutput = new Navigation2D(0,0,0);
 
 
     // Limit to the change per second allowed for Linear and Rotational Velocity
-    double linearAccelerationLimit;
-    double rotationalAccelerationLimit;
+    public double linearAccelerationLimit;
+    public double rotationalAccelerationLimit;
 
     // Constructor
-    AccelerationLimiter() {
+    public AccelerationLimiter() {
     }
 
-    AccelerationLimiter(double linearAccelerationLimit, double rotationalAccelerationLimit) {
+    public AccelerationLimiter(double linearAccelerationLimit, double rotationalAccelerationLimit) {
         setAccelerationLimitsLinearAndRotation(linearAccelerationLimit,rotationalAccelerationLimit);
     }
 
@@ -62,47 +62,50 @@ public class AccelerationLimiter {
         if(initialized) {
             double deltaTime = currentTime - previousTime;
             requestedVelocityAndRotation = new Navigation2D(vx,vy,av);
-            Navigation2D differenceVector = requestedVelocityAndRotation.subtractAndReturn(previousVelocityAndRotation);
+            Navigation2D differenceVector = requestedVelocityAndRotation.subtractAndReturn(previousVelocityAndRotationOutput);
 
-            double linearAccelerationRequested = differenceVector.getMagnitude() * deltaTime;
-            double rotationalAccelerationRequested = differenceVector.theta * deltaTime;
+            double linearAccelerationRequested = differenceVector.getMagnitude() / deltaTime;
+            double rotationalAccelerationRequested = differenceVector.theta / deltaTime;
             boolean isLinearAccelerationWithinLimit = Math.abs(linearAccelerationRequested) <= linearAccelerationLimit;
             boolean isRotationalAccelerationWithinLimit = Math.abs(rotationalAccelerationRequested) <= rotationalAccelerationLimit;
 
             // Baseline
-            newVelocityAndRotation = requestedVelocityAndRotation.copy();
+            newVelocityAndRotationOutput = requestedVelocityAndRotation.copy();
 
-            if(limiterEnabled) {
+
+            if(limiterEnabled && (!isLinearAccelerationWithinLimit || !isRotationalAccelerationWithinLimit)) {
                 // Cap linear accelerations to limit.
                 if (!isLinearAccelerationWithinLimit) {
                     double magnitudeRescale = (linearAccelerationLimit / linearAccelerationRequested);
-                    newVelocityAndRotation = newVelocityAndRotation.multiplyAndReturn(magnitudeRescale);
+                    differenceVector = differenceVector.multiplyAndReturn(magnitudeRescale);
                 }
                 // Cap rotational acceleration to limit.
                 if (!isRotationalAccelerationWithinLimit) {
                     double rotationRescale = (rotationalAccelerationLimit / rotationalAccelerationRequested);
-                    newVelocityAndRotation.theta = newVelocityAndRotation.theta * rotationRescale;
+                    differenceVector.theta = differenceVector.theta * rotationRescale;
                 }
+                // Apply modified difference vector to create new vector.
+                newVelocityAndRotationOutput = previousVelocityAndRotationOutput.addAndReturn(differenceVector);
             }
+            previousVelocityAndRotationOutput = newVelocityAndRotationOutput; // Update Previous output from new.
         }
 
-        if(!initialized) {
-            previousTime = currentTime;
-            previousVelocityAndRotation = new Navigation2D(vx,vy,av);
-            initialized = true;
-        }
+        // This will initialize the object if it isn't already.
+        previousTime = currentTime;
+        initialized = true;
 
 
 
     }
 
-    public Navigation2D getNewVelocityAndRotation() {
-        return newVelocityAndRotation;
+    public Navigation2D getNewVelocityAndRotationOutput() {
+        return newVelocityAndRotationOutput;
     }
 
-    public Navigation2D updateAndReturnNewVelocityAndRotation(double currentTime, double vx, double vy, double av) {
-        update(currentTime,vx,vy,av);
-        return getNewVelocityAndRotation();
+
+    public Mecanum.Command updateAndReturnMecanumCommand(double currentTime, Mecanum.Command command) {
+        update(currentTime, command.vx, command.vy, command.av);
+        return new Mecanum.Command(newVelocityAndRotationOutput.x, newVelocityAndRotationOutput.y, newVelocityAndRotationOutput.theta);
     }
 
 

@@ -3,11 +3,13 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.teamcode.Utilities.AccelerationLimiter;
 import org.firstinspires.ftc.teamcode.Utilities.AutoDrive;
 import org.firstinspires.ftc.teamcode.Utilities.Constants;
 import org.firstinspires.ftc.teamcode.Utilities.Controller;
 import org.firstinspires.ftc.teamcode.Utilities.Executive;
 import org.firstinspires.ftc.teamcode.Utilities.InteractiveInit;
+import org.firstinspires.ftc.teamcode.Utilities.Mecanum;
 import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation;
 import org.firstinspires.ftc.teamcode.Utilities.Mutable;
 import static org.firstinspires.ftc.teamcode.Utilities.Executive.StateMachine.StateType.DRIVE;
@@ -36,6 +38,8 @@ public class Manual extends RobotHardware {
     private boolean precisionMode = false;
     private double precisionSpeed = 0.3;
     public Controller clawController;
+    private AccelerationLimiter accelerationLimiter = new AccelerationLimiter(2,2);
+
 
     @Override
     public void init() {
@@ -102,12 +106,12 @@ public class Manual extends RobotHardware {
         telemetry.addData("Precision Mode", precisionMode);
 
         // Mecanum Drive Control
-        setDriveForSimpleMecanum(
+        Mecanum.Command mecanumCommand =  Mecanum.simpleJoystickToCommand(
                 Math.pow(controller1.left_stick_x, exponential) * driveSpeed * precisionOutput,
                 Math.pow(controller1.left_stick_y, exponential) * driveSpeed * precisionOutput,
                 Math.pow(controller1.right_stick_x, exponential) * driveSpeed * RotationSpeed.get() * precisionOutput,
                 Math.pow(controller1.right_stick_y, exponential) * driveSpeed * precisionOutput);
-
+        setDriveForMecanumCommand(accelerationLimiter.updateAndReturnMecanumCommand(time,mecanumCommand));
         nonDriveControls();
     }
 
