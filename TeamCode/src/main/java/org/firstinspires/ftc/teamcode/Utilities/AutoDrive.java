@@ -14,7 +14,7 @@ public class AutoDrive {
 
     private RobotHardware opMode;
     private MecanumNavigation mecanumNavigation;
-    public AccelerationLimiter accelerationLimiter = new AccelerationLimiter(1.0,1.0);
+    public AccelerationLimiter accelerationLimiter = new AccelerationLimiter(0.5,0.5);
 
 
     public AutoDrive(RobotHardware opMode, MecanumNavigation mecanumNavigation) {
@@ -70,9 +70,11 @@ public class AutoDrive {
             Mecanum.Wheels wheels = mecanumNavigation.deltaWheelsFromPosition(rotationTarget);
                 // Testing
                 Mecanum.Command command = mecanumNavigation.deltaCommandFromPosition(rotationTarget);
-            double currentTime =  opMode.getTime();
+                double currentTime =  opMode.getTime();
+                command.normalizeSeparately();
                 command = accelerationLimiter.updateAndReturnMecanumCommand(currentTime, command);
-                wheels = Mecanum.commandToWheels(command);
+                //wheels = Mecanum.commandToWheels(command);
+                wheels = mecanumNavigation.deltaWheelsFromBodyRelativeMotion(command);
             rateScale = rampDown(Math.abs(deltaPosition.theta)*(180/Math.PI), 50, 0.8, 0.1);
             wheels = wheels.scaleWheelPower(rateScale * rate);
             opMode.setDriveForMecanumWheels(wheels);
@@ -84,8 +86,10 @@ public class AutoDrive {
                 // Testing
                 Mecanum.Command command = mecanumNavigation.deltaCommandFromPosition(targetPosition);
                 double currentTime =  opMode.getTime();
+                command.normalizeSeparately();
                 command = accelerationLimiter.updateAndReturnMecanumCommand(currentTime, command);
-                wheels = Mecanum.commandToWheels(command);
+                //wheels = Mecanum.commandToWheels(command);
+                wheels =  mecanumNavigation.deltaWheelsFromBodyRelativeMotion(command);
             rateScale = rampDown(deltaDistance, 10, 1, 0.05);
             wheels = wheels.scaleWheelPower(rateScale * rate);
 

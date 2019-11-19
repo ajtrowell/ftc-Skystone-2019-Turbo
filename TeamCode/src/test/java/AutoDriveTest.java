@@ -81,7 +81,7 @@ public class AutoDriveTest {
     public void simulateAutoDrive() {
         double simulationEndTime = 5.5;
         double simulationStepTime = 0.02;
-        double driveSpeed = 1.0;
+        double driveSpeed = 0.5;
 
         Navigation2D targetPosition = new Navigation2D(10,0,Math.toRadians(0));
 

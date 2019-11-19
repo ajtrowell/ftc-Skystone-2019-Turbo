@@ -85,6 +85,32 @@ public class Mecanum {
             this.av = av;
         }
 
+        /**
+         * No single field can have a magnitude greater than 1.0
+         */
+        public void normalizeSeparately() {
+            List<Double> powers = Arrays.asList(vx,vy,av);
+            clampPowers(powers);
+            this.vx = powers.get(0);
+            this.vy = powers.get(1);
+            this.av = powers.get(2);
+        }
+
+        /**
+         * The sums of the magnitudes of the fields may not be greater than 1.0
+         */
+        public void normalizeJointly() {
+            double sumOfMagnitudes = Math.abs(vx) + Math.abs(vy) + Math.abs(av);
+            double scalar = 1.0;
+            if(sumOfMagnitudes > 1.0) {
+                scalar /= sumOfMagnitudes;
+                this.vx *= scalar;
+                this.vy *= scalar;
+                this.av *= scalar;
+            }
+
+        }
+
     }
 
     /**

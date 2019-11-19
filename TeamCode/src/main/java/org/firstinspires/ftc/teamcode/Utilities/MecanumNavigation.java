@@ -115,7 +115,7 @@ public class MecanumNavigation {
     public Mecanum.Wheels deltaWheelsFromBodyRelativeMotion(Navigation2D bodyRelativeMovement) {
         double deltaX = bodyRelativeMovement.x;
         double deltaY = bodyRelativeMovement.y;
-        deltaY /= driveTrainMecanum.lateralScaling;
+        deltaY /= driveTrainMecanum.lateralScaling;  // Should this be *= ?
         double deltaTheta = bodyRelativeMovement.theta;
 
         double K = driveTrainMecanum.getK();
@@ -131,6 +131,12 @@ public class MecanumNavigation {
         Mecanum.Wheels wheels =  new Mecanum.Wheels(frontLeft, frontRight, backLeft, backRight);
         wheels.coupledScaleToOne();
         return wheels;
+    }
+
+    // Overload for Mecanum.Command
+    public Mecanum.Wheels deltaWheelsFromBodyRelativeMotion(Mecanum.Command bodyRelativeMovementCommand) {
+        return deltaWheelsFromBodyRelativeMotion(new Navigation2D(bodyRelativeMovementCommand.vx,
+                bodyRelativeMovementCommand.vy,bodyRelativeMovementCommand.av));
     }
 
 
