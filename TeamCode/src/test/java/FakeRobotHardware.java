@@ -13,6 +13,8 @@ import java.util.EnumMap;
 
 public class FakeRobotHardware extends RobotHardware {
 
+    public double time;
+
     // Run to initialize fake internals
     public void initializeFakeOpMode() {
         initFakeMotors();
@@ -20,6 +22,7 @@ public class FakeRobotHardware extends RobotHardware {
 
     // call within a simulation loop, giving current sim time, to propagate simulated hardware state.
     public void updateAndIntegrateFakeOpMode(double time) {
+        this.time = time;
         // update motor positions
         for(MotorName motorName: MotorName.values()) {
             fakeMotorMap.get(motorName).updateAndIntegratePosition(time);
@@ -41,6 +44,11 @@ public class FakeRobotHardware extends RobotHardware {
     @Override
     public void setDriveForMecanumWheels(Mecanum.Wheels wheels) {
         super.setDriveForMecanumWheels(wheels);
+    }
+
+    @Override
+    public double getTime() {
+        return this.time;
     }
 
     //

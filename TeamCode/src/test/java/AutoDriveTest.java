@@ -73,32 +73,27 @@ public class AutoDriveTest {
     public void initializeAutoDrive() {
         assertThat(autoDrive).isNotNull();
         assertThat(autoDrive.accelerationLimiter.limiterEnabled).isNotNull();
-
         // Test Motion command for errors
-        double driveSpeed = 0.5;
-        autoDrive.rotateThenDriveToPosition(new Navigation2D(0,0,0), driveSpeed);
+        autoDrive.rotateThenDriveToPosition(new Navigation2D(0,0,0), 1.0);
     }
 
-    public boolean arrived = false;
     @Test
     public void simulateAutoDrive() {
-        double simulationEndTime = 3.5;
+        double simulationEndTime = 5.5;
         double simulationStepTime = 0.02;
-        double driveSpeed = 0.7;
+        double driveSpeed = 1.0;
 
+        Navigation2D targetPosition = new Navigation2D(10,0,Math.toRadians(0));
 
         while (simTime <= simulationEndTime) {
 
-            Navigation2D targetPosition = new Navigation2D(10,0,Math.toRadians(0));
-            arrived = autoDrive.rotateThenDriveToPosition(targetPosition, driveSpeed);
+            boolean arrived = autoDrive.rotateThenDriveToPosition(targetPosition, driveSpeed);
 
-
-            if(isDisplayInterval(10, simTime,simulationStepTime)) {
+            if(isDisplayInterval(5, simTime,simulationStepTime)) {
                 System.out.print("SimTime:  " + df.format(simTime) + "   Arrived:  " + arrived + "    ");
                 System.out.println(mecanumNavigation.currentPosition.toString());
 //                System.out.println();
             }
-
 
             mecanumNavigation.update();
             opMode.updateAndIntegrateFakeOpMode(simTime);

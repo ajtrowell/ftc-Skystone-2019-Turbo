@@ -88,6 +88,12 @@ public class MecanumNavigation {
      * @return Wheels power object, scaled to 1.
      */
     public Mecanum.Wheels deltaWheelsFromPosition(Navigation2D targetPosition) {
+        Mecanum.Command command = deltaCommandFromPosition(targetPosition);
+        return deltaWheelsFromBodyRelativeMotion(new Navigation2D(command.vx, command.vy, command.av));
+    }
+
+    //
+    public Mecanum.Command deltaCommandFromPosition(Navigation2D targetPosition) {
         double deltaX = targetPosition.x - currentPosition.x;
         double deltaY = targetPosition.y - currentPosition.y;
         double deltaTheta = targetPosition.theta - currentPosition.theta;
@@ -95,8 +101,7 @@ public class MecanumNavigation {
         double bodyX = deltaX * Math.cos(currentPosition.theta) + deltaY * Math.sin(currentPosition.theta);
         double bodyY = -deltaX * Math.sin(currentPosition.theta) + deltaY * Math.cos(currentPosition.theta);
         double bodyTheta = deltaTheta;
-
-        return deltaWheelsFromBodyRelativeMotion(new Navigation2D(bodyX, bodyY, bodyTheta));
+        return new Mecanum.Command(bodyX,bodyY, bodyTheta);
     }
 
 

@@ -61,6 +61,7 @@ public class AccelerationLimiter {
 
         if(initialized) {
             double deltaTime = currentTime - previousTime;
+            if (deltaTime == 0.0) return;
             requestedVelocityAndRotation = new Navigation2D(vx,vy,av);
             Navigation2D differenceVector = requestedVelocityAndRotation.subtractAndReturn(previousVelocityAndRotationOutput);
 

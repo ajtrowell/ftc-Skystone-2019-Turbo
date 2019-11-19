@@ -427,6 +427,10 @@ public class RobotHardware extends OpMode {
         }
     }
 
+    public double getTime() {
+        return time;
+    }
+
     /**
      * Initialize all motors, servos, sensors, set motor direction, motor runMode
      * Output whether or not the defined motors, servos, sensors could not be found

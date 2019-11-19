@@ -14,7 +14,7 @@ public class AutoDrive {
 
     private RobotHardware opMode;
     private MecanumNavigation mecanumNavigation;
-    public AccelerationLimiter accelerationLimiter = new AccelerationLimiter(1,1);
+    public AccelerationLimiter accelerationLimiter = new AccelerationLimiter(1.0,1.0);
 
 
     public AutoDrive(RobotHardware opMode, MecanumNavigation mecanumNavigation) {
@@ -68,6 +68,11 @@ public class AutoDrive {
             MecanumNavigation.Navigation2D rotationTarget = (MecanumNavigation.Navigation2D)currentPosition.clone();
             rotationTarget.theta = targetPosition.theta; // Only rotate to the target at first.
             Mecanum.Wheels wheels = mecanumNavigation.deltaWheelsFromPosition(rotationTarget);
+                // Testing
+                Mecanum.Command command = mecanumNavigation.deltaCommandFromPosition(rotationTarget);
+            double currentTime =  opMode.getTime();
+                command = accelerationLimiter.updateAndReturnMecanumCommand(currentTime, command);
+                wheels = Mecanum.commandToWheels(command);
             rateScale = rampDown(Math.abs(deltaPosition.theta)*(180/Math.PI), 50, 0.8, 0.1);
             wheels = wheels.scaleWheelPower(rateScale * rate);
             opMode.setDriveForMecanumWheels(wheels);
@@ -76,8 +81,14 @@ public class AutoDrive {
         } else if (Math.abs(deltaPosition.x) > distanceThresholdInches ||
                    Math.abs(deltaPosition.y) > distanceThresholdInches) {
             Mecanum.Wheels wheels = mecanumNavigation.deltaWheelsFromPosition(targetPosition);
+                // Testing
+                Mecanum.Command command = mecanumNavigation.deltaCommandFromPosition(targetPosition);
+                double currentTime =  opMode.getTime();
+                command = accelerationLimiter.updateAndReturnMecanumCommand(currentTime, command);
+                wheels = Mecanum.commandToWheels(command);
             rateScale = rampDown(deltaDistance, 10, 1, 0.05);
             wheels = wheels.scaleWheelPower(rateScale * rate);
+
             opMode.setDriveForMecanumWheels(wheels);
             return false;
         } else {  // Close enough
