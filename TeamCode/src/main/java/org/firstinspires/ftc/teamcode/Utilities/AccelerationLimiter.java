@@ -110,6 +110,31 @@ public class AccelerationLimiter {
     }
 
 
+    public double getLinearAccelerationLimit() {
+        return linearAccelerationLimit;
+    }
 
+    public double getRotationalAccelerationLimit() {
+        return rotationalAccelerationLimit;
+    }
 
+    public void adjustLinearAccelerationLimit(double adjustment) {
+        if (adjustment == 0) return;
+        // Prevent Negative acceleration limit.
+        if (linearAccelerationLimit + adjustment <= 0) {
+            linearAccelerationLimit = Math.abs(adjustment);
+        } else {
+            linearAccelerationLimit += adjustment;
+        }
+    }
+
+    public void adjustRotationalAccelerationLimit(double adjustment) {
+        if (adjustment == 0) return;
+        // Prevent Negative acceleration limit.
+        if (rotationalAccelerationLimit + adjustment <= 0) {
+            linearAccelerationLimit = Math.abs(adjustment);
+        } else {
+            rotationalAccelerationLimit += adjustment;
+        }
+    }
 }

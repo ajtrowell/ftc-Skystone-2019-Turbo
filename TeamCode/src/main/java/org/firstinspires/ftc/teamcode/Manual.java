@@ -98,6 +98,18 @@ public class Manual extends RobotHardware {
         controller2.update();
         mecanumNavigation.update();
 
+        // Acceleration Limit
+        telemetry.addData("Acceleration Limit, power/sec",accelerationLimiter.getLinearAccelerationLimit());
+        if(controller1.dpadUpOnce()) {
+            accelerationLimiter.adjustLinearAccelerationLimit(0.1);
+        }
+        if(controller1.dpadDownOnce()) {
+            accelerationLimiter.adjustLinearAccelerationLimit(-0.1);
+        }
+
+
+
+
         // Display the robot's position compared to where it started
         mecanumNavigation.displayPosition();
 

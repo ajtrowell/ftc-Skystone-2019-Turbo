@@ -65,12 +65,14 @@ public class BehaviorSandBox implements Executive.RobotStateMachineContextInterf
                     .addData("Motor Tester: ", "B")
                     .addData("Servo Tester: ", "X")
                     .addData("Skystone Detector: ", "Y")
-                    .addData("Autonomous: ", "Right Bumper");
+                    .addData("Autonomous: ", "Right Bumper")
+                    .addData("Skid Test: ", "Left Bumper");
             if(controller1.AOnce()) stateMachine.changeState(DRIVE, new Manual());
             else if (controller1.BOnce()) stateMachine.changeState(DRIVE, new Motor_Tester());
             else if (controller1.XOnce()) stateMachine.changeState(DRIVE, new Servo_Tester());
             else if (controller1.YOnce()) stateMachine.changeState(DRIVE, new Skystone_Detection());
             else if (controller1.rightBumper()) stateMachine.changeState(DRIVE, new Skystone_Detection());
+            else if (controller1.leftBumper()) stateMachine.changeState(DRIVE, new Acceleration_Slip_Test());
         }
     }
 
@@ -289,9 +291,93 @@ public class BehaviorSandBox implements Executive.RobotStateMachineContextInterf
         }
     }
 
+    class Acceleration_Slip_Test extends Executive.StateBase<AutoOpmode> {
+        boolean activateDriving = false;
+        boolean driveOutComplete = false;
+        boolean driveBackComplete = false;
+        MecanumNavigation.Navigation2D startingPosition;
+        MecanumNavigation.Navigation2D targetPosition = new MecanumNavigation.Navigation2D(72,0,0);
+
+        @Override
+        public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
+            super.init(stateMachine);
+            resetDriveRoutine();
+        }
+
+        private void resetDriveRoutine() {
+            activateDriving = false;
+            driveOutComplete = false;
+            driveBackComplete = false;
+        }
+
+        @Override
+        public void update() {
+            super.update();
+            if(controller1.startOnce()) {
+                stateMachine.changeState(DRIVE, new Start_Menu());
+            }
+
+            // Acceleration Limit controls
+            if(controller1.dpadUpOnce()) {
+                opMode.autoDrive.accelerationLimiter.adjustLinearAccelerationLimit(0.1);
+            }
+            if(controller1.dpadDownOnce()) {
+                opMode.autoDrive.accelerationLimiter.adjustLinearAccelerationLimit(-0.1);
+            }
+
+            // Speed Control
+            if(controller1.dpadRightOnce()) {
+                driveSpeed += 0.1;
+                if(driveSpeed > 1.0) {
+                    driveSpeed /= Math.abs(driveSpeed);
+                }
+            }
+            if(controller1.dpadLeftOnce()) {
+                driveSpeed += -0.1;
+                if(driveSpeed <= 0.0) {
+                    driveSpeed = 0.1;
+                }
+            }
+
+            // Reset Mecanum Navigation position.
+            if(controller1.YOnce()) {
+                opMode.mecanumNavigation.setCurrentPosition(new MecanumNavigation.Navigation2D(0, 0, 0));
+            }
+
+            if(controller1.XOnce()) { // Toggle driving activate
+                activateDriving = !activateDriving;
+                startingPosition = opMode.mecanumNavigation.currentPosition.copy();
+            }
+
+            // Telemetry
+            opMode.telemetry.addData("Control Accel and Velocity","with dpad vertical/horizontal");
+            opMode.telemetry.addData("Acceleration Limit, power/sec",opMode.autoDrive.accelerationLimiter);
+            opMode.telemetry.addData("Drive Speed Max",driveSpeed);
+            opMode.mecanumNavigation.displayPosition();
+
+
+            if(activateDriving) {
+                if(!driveOutComplete) {
+                    driveOutComplete = opMode.autoDrive.rotateThenDriveToPosition(targetPosition,driveSpeed);
+                } else { // Drive out is done
+
+                    if (!driveBackComplete) {
+                        driveBackComplete = opMode.autoDrive.rotateThenDriveToPosition(new MecanumNavigation.Navigation2D(0,0,0),driveSpeed);
+                    } else { // Drive back is done.
+                        activateDriving = false;
+                    }
+                }
+
+            }
+
+
+
+        }
+    }
+
     /* Class template for easy copy paste.
 
-     class Template extends Executive.StateBase {
+     class Template extends Executive.StateBase<AutoOpmode> {
             @Override
             public void init(Executive.StateMachine stateMachine) {
                 super.init(stateMachine);
