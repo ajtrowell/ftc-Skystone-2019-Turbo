@@ -107,6 +107,16 @@ public class Manual extends RobotHardware {
             accelerationLimiter.adjustLinearAccelerationLimit(-0.1);
         }
 
+        if(controller1.left_trigger > 0.1 && controller1.BOnce()) { // Toggle Acceleration Limiter
+            if(autoDrive.accelerationLimiter.isAccelerationLimitEnabled()) {
+                autoDrive.accelerationLimiter.disableAccelerationLimit();
+            } else {
+                autoDrive.accelerationLimiter.enableAccelerationLimit();
+            }
+        }
+        telemetry.addData("Acceleration Limiter:  ", autoDrive.accelerationLimiter.isAccelerationLimitEnabled());
+        telemetry.addData("Toggle AccelLimit with", "Left Trigger + B_Once");
+
 
 
 

@@ -302,6 +302,7 @@ public class BehaviorSandBox implements Executive.RobotStateMachineContextInterf
         public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
             super.init(stateMachine);
             resetDriveRoutine();
+            opMode.autoDrive.accelerationLimiter.enableAccelerationLimit();
         }
 
         private void resetDriveRoutine() {
@@ -349,10 +350,20 @@ public class BehaviorSandBox implements Executive.RobotStateMachineContextInterf
                 startingPosition = opMode.mecanumNavigation.currentPosition.copy();
             }
 
+            if(controller1.BOnce()) { // Toggle Acceleration Limiter
+                if(opMode.autoDrive.accelerationLimiter.isAccelerationLimitEnabled()) {
+                    opMode.autoDrive.accelerationLimiter.disableAccelerationLimit();
+                } else {
+                    opMode.autoDrive.accelerationLimiter.enableAccelerationLimit();
+                }
+            }
+
             // Telemetry
             opMode.telemetry.addData("Control Accel and Velocity","with dpad vertical/horizontal");
             opMode.telemetry.addData("Acceleration Limit, power/sec",opMode.autoDrive.accelerationLimiter);
             opMode.telemetry.addData("Drive Speed Max",driveSpeed);
+            opMode.telemetry.addData("Acceleration Limiter:  ", opMode.autoDrive.accelerationLimiter.isAccelerationLimitEnabled());
+            opMode.telemetry.addData("Toggle AccelLimit with", "B");
             opMode.mecanumNavigation.displayPosition();
 
 

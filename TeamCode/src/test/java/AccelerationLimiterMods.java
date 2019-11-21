@@ -5,10 +5,12 @@ import org.firstinspires.ftc.teamcode.Utilities.Mecanum;
 import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation.Navigation2D;
 import org.firstinspires.ftc.teamcode.Utilities.Waypoints;
 import org.firstinspires.ftc.teamcode.Utilities.Waypoints.LabeledWaypoint;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +20,8 @@ import static org.firstinspires.ftc.teamcode.Utilities.Waypoints.LocationLoading
 import static org.firstinspires.ftc.teamcode.Utilities.Waypoints.LocationLoading.GRAB_SKYSTONE_A;
 
 public class AccelerationLimiterMods {
+
+    DecimalFormat df;
 
     private void assertMecanumWheelEqual(Mecanum.Wheels wheels1, Mecanum.Wheels wheels2) {
         assertThat(wheels1.backLeft).isEqualTo(wheels2.backLeft);
@@ -65,19 +69,28 @@ public class AccelerationLimiterMods {
     double simTime = 0.0;
 
     private void printCommand(Mecanum.Command command) {
-        System.out.println(command.vx + ", " + command.vy + ", " + command.av);
+        System.out.println(df.format(command.vx) + ", " + df.format(command.vy) + ", " + df.format(command.av));
+    }
+
+    @Before
+    public void initializeTest() {
+        df = new DecimalFormat("0.00");
     }
 
     @Test
     public void TestAccelerationLimit() {
 
         Mecanum.Command inputCommand = new Mecanum.Command(0,0,0);
-        while(simTime < 4.0) {
+        while(simTime < 10.0) {
 
             if(simTime < 2.0) {
-                inputCommand = new Mecanum.Command(1.0, 0, 0);
-            } else {
-                inputCommand = new Mecanum.Command(0.0, 1, 0);
+                inputCommand = new Mecanum.Command(0.0, 0.0, 1);
+            } else if (simTime < 4.0){
+                inputCommand = new Mecanum.Command(0.0, 0.0, -1);
+            } else if (simTime < 6.0){
+                inputCommand = new Mecanum.Command(-1.0, 0.0, 0);
+            } else if (simTime < 8.0) {
+                inputCommand = new Mecanum.Command(.1, -1.0, .1);
             }
 
 
@@ -87,10 +100,10 @@ public class AccelerationLimiterMods {
 
 
             // Print results
-            System.out.println("Time: " + simTime);
+            System.out.print("Time: " + df.format(simTime) + "   ");
             System.out.print("Command Input: ");
             printCommand(inputCommand);
-            System.out.print("Command Limited Output: ");
+            System.out.print("Command Limited Output:     ");
             printCommand(limitedCommand);
             System.out.println("");
 

@@ -17,7 +17,7 @@ public class AccelerationLimiter {
 
     boolean limitsSet = false;
     boolean initialized = false;
-    public boolean limiterEnabled = true;
+    public boolean limiterEnabled = false;
 
     double previousTime = 0;
 //    double currentTime = 0;
@@ -45,6 +45,19 @@ public class AccelerationLimiter {
         limitsSet = true;
     }
 
+    public void enableAccelerationLimit() {
+        limiterEnabled = true;
+    }
+
+    public void disableAccelerationLimit() {
+        limiterEnabled = false;
+    }
+
+    public boolean isAccelerationLimitEnabled() {
+        return limiterEnabled;
+    }
+
+
     /**
      * Expected convention is Vx forward, Vy left, Av counter clockwise.
      * However, this convention doesn't matter, as long as you are consistent with the input/output.
@@ -66,7 +79,7 @@ public class AccelerationLimiter {
             Navigation2D differenceVector = requestedVelocityAndRotation.subtractAndReturn(previousVelocityAndRotationOutput);
 
             double linearAccelerationRequested = differenceVector.getMagnitude() / deltaTime;
-            double rotationalAccelerationRequested = differenceVector.theta / deltaTime;
+            double rotationalAccelerationRequested = Math.abs(differenceVector.theta) / deltaTime;
             boolean isLinearAccelerationWithinLimit = Math.abs(linearAccelerationRequested) <= linearAccelerationLimit;
             boolean isRotationalAccelerationWithinLimit = Math.abs(rotationalAccelerationRequested) <= rotationalAccelerationLimit;
 
@@ -88,7 +101,7 @@ public class AccelerationLimiter {
                 // Apply modified difference vector to create new vector.
                 newVelocityAndRotationOutput = previousVelocityAndRotationOutput.addAndReturn(differenceVector);
             }
-            previousVelocityAndRotationOutput = newVelocityAndRotationOutput; // Update Previous output from new.
+            previousVelocityAndRotationOutput = newVelocityAndRotationOutput.copy(); // Update Previous output from new.
         }
 
         // This will initialize the object if it isn't already.
