@@ -13,7 +13,9 @@ import java.util.EnumMap;
 
 public class FakeRobotHardware extends RobotHardware {
 
-    public double time;
+    //public double time; This already exists in RobotHardware, and should not be hidden.
+    // Remember, Java doesn't allow subclasses to Override parent fields, only hide them, so
+    // it is better not to declare 'time' here, lest we fail to modify the parent field.
 
     // Run to initialize fake internals
     public void initializeFakeOpMode() {
