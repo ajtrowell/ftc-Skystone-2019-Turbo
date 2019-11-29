@@ -23,6 +23,7 @@ import java.util.Locale;
 
 public class IMUUtilities {
 
+    private double previousHeading = 0;
     // Convenience numbers for when IMUUtilities is actually instantiated.
     public BNO055IMU imu;
     public double heading;
@@ -52,7 +53,11 @@ public class IMUUtilities {
 
     public void updateNow() {
         // If IMU is missing, do nothing.
-        if (imu == null) {return;}
+        if (imu == null) {
+            opMode.telemetry.addData("", "IMU Missing");
+            Log.e("IMUUtilities", "IMU Missing");
+            return;
+        }
         lastUpdateSec = opMode.time;
 
         imuSystemStatus = imu.getSystemStatus();
@@ -68,6 +73,15 @@ public class IMUUtilities {
         xAccel = acceleration.xAccel;
         yAccel = acceleration.yAccel;
         zAccel = acceleration.zAccel;
+
+        // Unwrap compensated heading.
+        double deltaHeading = heading - previousHeading;
+        previousHeading = heading;
+        if (deltaHeading > 180) {
+            headingCompensation += -360;
+        } else if (deltaHeading < -180) {
+            headingCompensation += 360;
+        }
     }
 
     public void update() {
