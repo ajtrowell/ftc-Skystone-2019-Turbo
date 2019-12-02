@@ -7,13 +7,18 @@ import org.firstinspires.ftc.teamcode.Utilities.Waypoints;
 import org.firstinspires.ftc.teamcode.Utilities.Waypoints.LabeledWaypoint;
 import org.junit.Before;
 import org.junit.Test;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Scalar;
 import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.firstinspires.ftc.teamcode.RobotHardware.StartPosition.FIELD_LOADING;
@@ -26,15 +31,19 @@ public class VisionTest {
     static {
         try {
             System.load("C:/opencv/build/java/x64/opencv_java343.dll");
-        } catch(UnsatisfiedLinkError e) {
+            // https://sourceforge.net/projects/opencvlibrary/files/opencv-win/3.4.3/
+        } catch (UnsatisfiedLinkError e) {
             System.err.println("Native code library failed to load.\n" + e);
+            System.err.println("For windows 10, download OpenCV Library from:");
+            System.err.println("https://sourceforge.net/projects/opencvlibrary/files/opencv-win/3.4.3/");
+            System.err.println("And extract to your C:\\ drive");
+
             System.exit(1);
         }
     }
 
     String IMAGE_READ_PATH = "./TestData/openCV_input/";
     String IMAGE_WRITE_PATH = "./TestData/openCV_output/";
-
 
 
     Mat input = new Mat();
@@ -55,9 +64,32 @@ public class VisionTest {
     @Test
     public void imageWrite() {
         String writePath = IMAGE_WRITE_PATH + "outputTestImage.jpg";
-        Imgcodecs.imwrite(writePath,input);
+        Imgcodecs.imwrite(writePath, input);
         File outputFile = new File(writePath);
         assertThat(outputFile.exists()).isTrue();
+    }
+
+    @Test
+    public void colorThresholding() {
+        Mat yCbCrChan2Mat = new Mat();
+        Mat thresholdMat = new Mat();
+        Mat all = new Mat();
+        List<MatOfPoint> contoursList = new ArrayList<>();
+
+        Imgproc.cvtColor(input, yCbCrChan2Mat, Imgproc.COLOR_RGB2YCrCb);//converts rgb to ycrcb
+        Core.extractChannel(yCbCrChan2Mat, yCbCrChan2Mat, 2);//takes cb difference and stores
+
+        //b&w
+        Imgproc.threshold(yCbCrChan2Mat, thresholdMat, 152, 255, Imgproc.THRESH_BINARY_INV);
+
+        //outline/contour
+        Imgproc.findContours(thresholdMat, contoursList, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+        yCbCrChan2Mat.copyTo(all);//copies mat object
+        Imgproc.drawContours(all, contoursList, -1, new Scalar(255, 0, 0), 3, 8);//draws blue contours
+
+        Imgcodecs.imwrite(IMAGE_WRITE_PATH + "yCbCr.jpg", yCbCrChan2Mat);
+        Imgcodecs.imwrite(IMAGE_WRITE_PATH + "threshold.jpg", thresholdMat);
+        Imgcodecs.imwrite(IMAGE_WRITE_PATH + "all.jpg", all);
     }
 
 }
