@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-class SinglePixelPipeline extends OpenCvPipeline
+class SinglePixelPipeline extends TernarySkystonePipeline
 {
     // Sampling size and location
     private static float rectHeight = .6f/8f;
@@ -32,6 +32,7 @@ class SinglePixelPipeline extends OpenCvPipeline
     private static int valMid = -1;
     private static int valLeft = -1;
     private static int valRight = -1;
+    private SkystoneRelativeLocation skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
 
     public static int getValLeft() {
         return valLeft;
@@ -176,6 +177,21 @@ class SinglePixelPipeline extends OpenCvPipeline
                 return input;
             }
         }
+    }
+
+    @Override
+    public SkystoneRelativeLocation getSkystoneRelativeLocation() {
+        int maxValue = Math.max(Math.max(valLeft,valMid),valLeft);
+        if(valLeft == maxValue) {
+            skystoneRelativeLocation = SkystoneRelativeLocation.LEFT;
+        } else if (valMid == maxValue) {
+            skystoneRelativeLocation = SkystoneRelativeLocation.CENTER;
+        } else if (valRight == maxValue) {
+            skystoneRelativeLocation = SkystoneRelativeLocation.RIGHT;
+        } else {
+            skystoneRelativeLocation = SkystoneRelativeLocation.CENTER;
+        }
+        return skystoneRelativeLocation;
     }
 
 }

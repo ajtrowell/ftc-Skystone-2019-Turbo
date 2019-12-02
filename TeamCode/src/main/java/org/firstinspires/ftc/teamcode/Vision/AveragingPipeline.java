@@ -25,7 +25,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
  * then you will need to account for that accordingly.
  */
 
-public class AveragingPipeline extends OpenCvPipeline
+public class AveragingPipeline extends TernarySkystonePipeline
 {
     /*
      * NOTE: if you wish to use additional Mat objects in your processing pipeline, it is
@@ -72,6 +72,7 @@ public class AveragingPipeline extends OpenCvPipeline
     // Output
     // Demo2
     private int position = 0; // output position
+    private SkystoneRelativeLocation skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
 
     public int getPosition() {
         return position;
@@ -152,5 +153,27 @@ public class AveragingPipeline extends OpenCvPipeline
         subMat3 = null;
 
         return input;
+    }
+
+    @Override
+    public SkystoneRelativeLocation getSkystoneRelativeLocation() {
+        // TODO: Ensure the enum locations are correct, based on the positions.
+        switch (position) {
+            case 0:
+                skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
+                break;
+            case 1:
+                skystoneRelativeLocation = SkystoneRelativeLocation.LEFT;
+                break;
+            case 2:
+            default:
+                skystoneRelativeLocation = SkystoneRelativeLocation.CENTER;
+                break;
+            case 3:
+                skystoneRelativeLocation = SkystoneRelativeLocation.RIGHT;
+                break;
+        }
+
+        return skystoneRelativeLocation;
     }
 }
