@@ -5,11 +5,14 @@ import org.firstinspires.ftc.teamcode.Utilities.Color;
 import org.firstinspires.ftc.teamcode.Utilities.MecanumNavigation.Navigation2D;
 import org.firstinspires.ftc.teamcode.Utilities.Waypoints;
 import org.firstinspires.ftc.teamcode.Utilities.Waypoints.LabeledWaypoint;
+import org.firstinspires.ftc.teamcode.Vision.SkystoneDetectorOpenCV;
+import org.firstinspires.ftc.teamcode.WebcamExample;
 import org.junit.Before;
 import org.junit.Test;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -92,4 +95,14 @@ public class VisionTest {
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "all.jpg", all);
     }
 
+
+    @Test
+    public void testSkystoneDetectorPipeline() {
+        SkystoneDetectorOpenCV skystoneDetectorOpenCV = new SkystoneDetectorOpenCV(Color.Ftc.BLUE);
+        SkystoneDetectorOpenCV.AveragingPipeline testPipeline = skystoneDetectorOpenCV.getPipelineForTesting();
+        Mat outputMat = testPipeline.processFrame(input);
+//        Imgproc.circle(outputMat, new Point(outputMat.width()/2,outputMat.height()/2),
+//                50, new Scalar(225, 52, 235), 4);
+        Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline.jpg",outputMat);
+    }
 }
