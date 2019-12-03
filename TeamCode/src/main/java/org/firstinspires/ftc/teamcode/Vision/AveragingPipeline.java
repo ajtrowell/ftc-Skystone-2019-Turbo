@@ -38,21 +38,21 @@ public class AveragingPipeline extends TernarySkystonePipeline
         this.normalizedLocations = sampleLocationsNormalized;
     }
 
-    AveragingPipeline() {
+    public AveragingPipeline() {
         SampleLocationsNormalized visionNormalizedLocations =
                 new SampleLocationsNormalized();
         visionNormalizedLocations.leftPosition = new Point(0.25,0.5);
         visionNormalizedLocations.centerPosition = new Point(0.5,0.5);
         visionNormalizedLocations.rightPosition = new Point(0.75,0.5);
         visionNormalizedLocations.blockSize = new Point(0.2, 0.2);
-        visionNormalizedLocations.backgroundSize = new Point(0.6, 0.2);
+        visionNormalizedLocations.backgroundSize = new Point(0.2, 0.2);
         visionNormalizedLocations.lineThickness = 0.01;
-        visionNormalizedLocations.markerSize = 0.1;
+        visionNormalizedLocations.markerSize = 0.04;
         this.normalizedLocations = visionNormalizedLocations;
 
     }
 
-    AveragingPipeline(SampleLocationsNormalized sampleLocationsNormalized) {
+    public AveragingPipeline(SampleLocationsNormalized sampleLocationsNormalized) {
         this.normalizedLocations = sampleLocationsNormalized;
     }
 
@@ -105,17 +105,11 @@ public class AveragingPipeline extends TernarySkystonePipeline
         // Extract the Cb channel from the image
         Core.extractChannel(YCrCb, Cb, 2);
 
-        // Define Sample Areas
-        Rect rect1 = new Rect(sampleLocationsPx.leftPosition,sampleLocationsPx.blockSize);
-        Rect rect2 = new Rect(sampleLocationsPx.centerPosition,sampleLocationsPx.blockSize);
-        Rect rect3 = new Rect(sampleLocationsPx.rightPosition,sampleLocationsPx.blockSize);
-        Rect rectBackground = new Rect(sampleLocationsPx.centerPosition,sampleLocationsPx.backgroundSize);
-
         // The the sample areas from the Cb channel
-        subMat1 = Cb.submat(rect1);
-        subMat2 = Cb.submat(rect2);
-        subMat3 = Cb.submat(rect3);
-        subMatBackground = Cb.submat(rectBackground);
+        subMat1 = Cb.submat(sampleLocationsPx.leftRect);
+        subMat2 = Cb.submat(sampleLocationsPx.centerRect);
+        subMat3 = Cb.submat(sampleLocationsPx.rightRect);
+        subMatBackground = Cb.submat(sampleLocationsPx.backgroundRect);
 
         // Average the sample areas
         avg1 = (int)Core.mean(subMat1).val[0];
@@ -125,9 +119,9 @@ public class AveragingPipeline extends TernarySkystonePipeline
 
         // Draw rectangles around the sample areas
         Scalar rectangleColor = new Scalar(0, 0, 255);
-        Imgproc.rectangle(input, rect1, rectangleColor, sampleLocationsPx.lineThickness);
-        Imgproc.rectangle(input, rect2, rectangleColor, sampleLocationsPx.lineThickness);
-        Imgproc.rectangle(input, rect3, rectangleColor, sampleLocationsPx.lineThickness);
+        Imgproc.rectangle(input, sampleLocationsPx.leftRect, rectangleColor, sampleLocationsPx.lineThickness);
+        Imgproc.rectangle(input, sampleLocationsPx.centerRect, rectangleColor, sampleLocationsPx.lineThickness);
+        Imgproc.rectangle(input, sampleLocationsPx.rightRect, rectangleColor, sampleLocationsPx.lineThickness);
 
         // Figure out which sample zone had the lowest contrast from blue (lightest color)
         max = Math.max(avg1, Math.max(avg2, avg3));

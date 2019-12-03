@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
@@ -24,12 +25,13 @@ public class VisionTest {
     // Load x64 OpenCV Library dll
     static {
         try {
-            System.load("C:/opencv/build/java/x64/opencv_java343.dll");
+            System.load("C:/opencv/build/java/x64/opencv_java412.dll");
             // https://sourceforge.net/projects/opencvlibrary/files/opencv-win/3.4.3/
         } catch (UnsatisfiedLinkError e) {
             System.err.println("Native code library failed to load.\n" + e);
             System.err.println("For windows 10, download OpenCV Library from:");
             System.err.println("https://sourceforge.net/projects/opencvlibrary/files/opencv-win/3.4.3/");
+            System.err.println("https://opencv.org/releases/");
             System.err.println("And extract to your C:\\ drive");
 
             System.exit(1);
@@ -82,6 +84,17 @@ public class VisionTest {
         Imgproc.findContours(thresholdMat, contoursList, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
         yCbCrChan2Mat.copyTo(all);//copies mat object
         Imgproc.drawContours(all, contoursList, -1, new Scalar(255, 0, 0), 3, 8);//draws blue contours
+
+        Imgproc.rectangle(
+                all,
+                new Point(
+                        input.cols()*0.25,
+                        input.rows()*0.25),
+                new Point(
+                        input.cols()*0.75,
+                        input.rows()*0.75),
+                new Scalar(0, 255, 0), 3);
+
 
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "yCbCr.jpg", yCbCrChan2Mat);
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "threshold.jpg", thresholdMat);

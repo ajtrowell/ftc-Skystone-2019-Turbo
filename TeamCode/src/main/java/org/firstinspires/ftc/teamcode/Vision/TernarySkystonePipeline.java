@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Vision;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Size;
 import org.openftc.easyopencv.OpenCvPipeline;
 
@@ -84,10 +85,14 @@ abstract class TernarySkystonePipeline extends OpenCvPipeline {
             double maxOffsetY = Math.max(blockSize.y,backgroundSize.y);
 
             compoundRange =
-                ((minX - maxOffsetX) >= 0) &&
-                ((maxX + maxOffsetX) <= 1) &&
-                ((minY - maxOffsetY) >= 0) &&
-                ((maxY + maxOffsetY) <= 1);
+                ((minX - blockSize.x/2) >= 0) &&
+                ((maxX + blockSize.x/2) <= 1) &&
+                ((minY - blockSize.y/2) >= 0) &&
+                ((maxY + blockSize.y/2) <= 1) &&
+                ((centerPosition.x - backgroundSize.x/2) >= 0) &&
+                ((centerPosition.x + backgroundSize.x/2) <= 1) &&
+                ((centerPosition.y - backgroundSize.y/2) >= 0) &&
+                ((centerPosition.y + backgroundSize.y/2) <= 1);
 
             return notNull && withinRange && compoundRange;
         }
@@ -107,6 +112,12 @@ abstract class TernarySkystonePipeline extends OpenCvPipeline {
         Point rightPosition;
         Size blockSize;
         Size backgroundSize;
+
+        // Rectangles for regions of interest
+        Rect leftRect;
+        Rect centerRect;
+        Rect rightRect;
+        Rect backgroundRect;
 
         public Point skystone = new Point();
 
@@ -138,6 +149,11 @@ abstract class TernarySkystonePipeline extends OpenCvPipeline {
             blockSize = new Size(imageWidth * sampleLocationsNormalized.blockSize.x, imageHeight * sampleLocationsNormalized.blockSize.y);
             backgroundSize = new Size(imageWidth * sampleLocationsNormalized.backgroundSize.x, imageHeight * sampleLocationsNormalized.backgroundSize.y);
 
+            leftRect = getCenteredRect(leftPosition,blockSize);
+            centerRect = getCenteredRect(centerPosition,blockSize);
+            rightRect = getCenteredRect(rightPosition,blockSize);
+            backgroundRect = getCenteredRect(centerPosition,backgroundSize);
+
             this.lineThickness = (int) Math.ceil(maxLength * sampleLocationsNormalized.lineThickness);
             this.markerSize = (int) Math.ceil(maxLength * sampleLocationsNormalized.markerSize);
 
@@ -146,6 +162,11 @@ abstract class TernarySkystonePipeline extends OpenCvPipeline {
             sampleLocationsNormalized.pixelScaleApplied = true;
         }
 
+    }
+
+    public Rect getCenteredRect(Point point, Size size) {
+        Point topLeftCorner = new Point(point.x - size.width/2, point.y - size.height/2);
+        return new Rect(topLeftCorner,size);
     }
 
 
