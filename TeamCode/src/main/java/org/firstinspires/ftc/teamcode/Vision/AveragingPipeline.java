@@ -4,7 +4,6 @@ package org.firstinspires.ftc.teamcode.Vision;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
@@ -39,16 +38,17 @@ public class AveragingPipeline extends TernarySkystonePipeline
     }
 
     public AveragingPipeline() {
-        SampleLocationsNormalized visionNormalizedLocations =
+        double height = 0.55;
+        SampleLocationsNormalized sampleLocationsNormalized =
                 new SampleLocationsNormalized();
-        visionNormalizedLocations.leftPosition = new Point(0.25,0.5);
-        visionNormalizedLocations.centerPosition = new Point(0.5,0.5);
-        visionNormalizedLocations.rightPosition = new Point(0.75,0.5);
-        visionNormalizedLocations.blockSize = new Point(0.2, 0.2);
-        visionNormalizedLocations.backgroundSize = new Point(0.2, 0.2);
-        visionNormalizedLocations.lineThickness = 0.01;
-        visionNormalizedLocations.markerSize = 0.04;
-        this.normalizedLocations = visionNormalizedLocations;
+        sampleLocationsNormalized.leftPosition = new Point(0.25,height);
+        sampleLocationsNormalized.centerPosition = new Point(0.5,height);
+        sampleLocationsNormalized.rightPosition = new Point(0.75,height);
+        sampleLocationsNormalized.blockSize = new Point(0.12, 0.12);
+        sampleLocationsNormalized.backgroundSize = new Point(0.7, 0.12);
+        sampleLocationsNormalized.lineThickness = 0.01;
+        sampleLocationsNormalized.markerSize = 0.03;
+        this.normalizedLocations = sampleLocationsNormalized;
 
     }
 
@@ -72,13 +72,16 @@ public class AveragingPipeline extends TernarySkystonePipeline
     private Mat subMat2;
     private Mat subMat3;
     private Mat subMatBackground;
-    private int max;
+    private int min;
     private int avg1;
     private int avg2;
     private int avg3;
     private int avgBackground;
 
-
+    public void getStatus() {
+        System.out.println(avg1 + " , " + avg2 + " , " + avg3 + " , " + avgBackground);
+        //return new ArrayList<>(avg1,avg2,avg3,avgBackground);
+    }
 
     // Sampling pixel locations
     private SampleLocationsPx sampleLocationsPx = new SampleLocationsPx();
@@ -119,22 +122,24 @@ public class AveragingPipeline extends TernarySkystonePipeline
 
         // Draw rectangles around the sample areas
         Scalar rectangleColor = new Scalar(0, 0, 255);
+        Scalar backgroundColor = new Scalar(255, 0, 0);
         Imgproc.rectangle(input, sampleLocationsPx.leftRect, rectangleColor, sampleLocationsPx.lineThickness);
         Imgproc.rectangle(input, sampleLocationsPx.centerRect, rectangleColor, sampleLocationsPx.lineThickness);
         Imgproc.rectangle(input, sampleLocationsPx.rightRect, rectangleColor, sampleLocationsPx.lineThickness);
+        Imgproc.rectangle(input, sampleLocationsPx.backgroundRect, backgroundColor, sampleLocationsPx.lineThickness/3);
 
         // Figure out which sample zone had the lowest contrast from blue (lightest color)
-        max = Math.max(avg1, Math.max(avg2, avg3));
+        min = Math.min(avg1, Math.min(avg2, avg3));
 
         // Draw a circle on the detected skystone
         Scalar markerColor = new Scalar(255,52,235);
-        if(max == avg1) {
+        if(min == avg1) {
             sampleLocationsPx.skystone = sampleLocationsPx.leftPosition;
             position = 1;
-        } else if(max == avg2) {
+        } else if(min == avg2) {
             sampleLocationsPx.skystone = sampleLocationsPx.centerPosition;
             position = 2;
-        } else if(max == avg3) {
+        } else if(min == avg3) {
             sampleLocationsPx.skystone = sampleLocationsPx.rightPosition;
             position = 3;
         } else {

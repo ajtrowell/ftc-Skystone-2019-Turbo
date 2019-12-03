@@ -3,6 +3,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.firstinspires.ftc.teamcode.Vision.AveragingPipeline;
 import org.firstinspires.ftc.teamcode.Vision.SinglePixelPipeline;
 
+import org.firstinspires.ftc.teamcode.Vision.TernarySkystonePipeline;
 import org.junit.Before;
 import org.junit.Test;
 import org.opencv.core.Core;
@@ -104,9 +105,10 @@ public class VisionTest {
 
     @Test
     public void testSkystoneDetectorPipeline() {
-        OpenCvPipeline testPipeline = new AveragingPipeline();
+        TernarySkystonePipeline testPipeline = new AveragingPipeline();
         Mat outputMat = testPipeline.processFrame(input);
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline.jpg",outputMat);
+        testPipeline.getStatus();
     }
 
 

@@ -6,9 +6,11 @@ import org.opencv.core.Rect;
 import org.opencv.core.Size;
 import org.openftc.easyopencv.OpenCvPipeline;
 
-abstract class TernarySkystonePipeline extends OpenCvPipeline {
+public abstract class TernarySkystonePipeline extends OpenCvPipeline {
 
     public abstract SkystoneRelativeLocation getSkystoneRelativeLocation();
+
+    public abstract void getStatus();
 
     /**
      * Data Class for storing the normalized sizes and locations

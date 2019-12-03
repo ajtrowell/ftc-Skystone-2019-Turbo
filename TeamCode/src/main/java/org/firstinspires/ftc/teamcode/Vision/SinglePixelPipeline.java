@@ -46,6 +46,10 @@ public class SinglePixelPipeline extends TernarySkystonePipeline
         return valRight;
     }
 
+    public void getStatus() {
+        System.out.println(valLeft + " , " + valMid + " , " + valRight);
+    }
+
     // CV intermediate products
     Mat yCbCrChan2Mat = new Mat();
     Mat thresholdMat = new Mat();
