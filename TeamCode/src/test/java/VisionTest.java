@@ -1,24 +1,21 @@
 import static com.google.common.truth.Truth.assertThat;
 
-import org.firstinspires.ftc.teamcode.RobotHardware;
-import org.firstinspires.ftc.teamcode.Utilities.Color;
 import org.firstinspires.ftc.teamcode.Vision.AveragingPipeline;
-import org.firstinspires.ftc.teamcode.Vision.SkystoneDetectorOpenCV;
+import org.firstinspires.ftc.teamcode.Vision.SinglePixelPipeline;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +46,8 @@ public class VisionTest {
     public void initialize() {
         String filePath = IMAGE_READ_PATH + "iphone7_27inches_by_2.5_up_inches.jpg";
         input = Imgcodecs.imread(filePath);
+
+        input = cropAndResize(input,640,480);
     }
 
     @Test
@@ -92,10 +91,36 @@ public class VisionTest {
 
     @Test
     public void testSkystoneDetectorPipeline() {
-        AveragingPipeline testPipeline = new AveragingPipeline();
+        OpenCvPipeline testPipeline = new AveragingPipeline();
         Mat outputMat = testPipeline.processFrame(input);
-//        Imgproc.circle(outputMat, new Point(outputMat.width()/2,outputMat.height()/2),
-//                50, new Scalar(225, 52, 235), 4);
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline.jpg",outputMat);
+    }
+
+
+
+    private Mat cropAndResize(Mat input, int fx, int fy) {
+        // First, crop the original image so it scales to the final dimensions.
+        int requiredWidthFromInputHeight =  Math.round(input.height() * fx / fy);
+        Mat croppedInput;
+        if ( requiredWidthFromInputHeight == input.width() ) {
+            // No cropping needed
+            croppedInput = new Mat();
+            input.copyTo(croppedInput);
+        } else if ( requiredWidthFromInputHeight < input.width() ) {
+            // Trim the width
+            int trimEachSideBy = Math.round((input.width() - requiredWidthFromInputHeight)/2);
+            Rect cropRect = new Rect(trimEachSideBy,0,requiredWidthFromInputHeight,input.height());
+            croppedInput = new Mat(input,cropRect);
+        } else {
+            // Trim the height
+            int requiredHeightFromInputWidth = Math.round(input.width() * fy / fx);
+            int trimEachSideBy = Math.round((input.height() - requiredHeightFromInputWidth)/2);
+            Rect cropRect = new Rect(0,trimEachSideBy,input.width(),requiredHeightFromInputWidth);
+            croppedInput = new Mat(input,cropRect);
+        }
+
+        // Now that the proportions are the same, perform the scaling and return:
+        Imgproc.resize(croppedInput, croppedInput, new Size(fx,fy),0,0, Imgproc.INTER_AREA);
+        return croppedInput;
     }
 }

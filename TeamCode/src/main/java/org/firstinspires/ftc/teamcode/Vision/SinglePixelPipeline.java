@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-class SinglePixelPipeline extends TernarySkystonePipeline
+public class SinglePixelPipeline extends TernarySkystonePipeline
 {
     // Sampling size and location
     private static float rectHeight = .6f/8f;
