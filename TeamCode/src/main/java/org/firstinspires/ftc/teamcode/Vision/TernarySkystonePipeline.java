@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.Vision;
 
+import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.core.Size;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 abstract class TernarySkystonePipeline extends OpenCvPipeline {
@@ -24,6 +26,7 @@ abstract class TernarySkystonePipeline extends OpenCvPipeline {
         public double lineThickness = -1;
         public double markerSize = -1;
 
+        public boolean pixelScaleApplied = false;
 
         SampleLocationsNormalized() {
 
@@ -88,6 +91,61 @@ abstract class TernarySkystonePipeline extends OpenCvPipeline {
 
             return notNull && withinRange && compoundRange;
         }
+    }
+
+    /**
+     * Pixel based locations of sample regions
+     */
+    class SampleLocationsPx {
+
+        private Size imageSizeScaling = new Size(0,0); // Not scaled by default.
+        private boolean pixelsScaled = false;
+
+        // New System
+        Point leftPosition;
+        Point centerPosition;
+        Point rightPosition;
+        Size blockSize;
+        Size backgroundSize;
+
+        public Point skystone = new Point();
+
+        public int lineThickness = 1;
+        public int markerSize = 10;
+
+
+        SampleLocationsPx() {
+        }
+
+        SampleLocationsPx(Mat input,SampleLocationsNormalized sampleLocationsNormalized) {
+            scaleSamplingPixelsToImageSizeAndNormalizedLocations(input,sampleLocationsNormalized);
+        }
+
+
+
+        public void scaleSamplingPixelsToImageSizeAndNormalizedLocations(Mat input, SampleLocationsNormalized sampleLocationsNormalized) {
+            Size currentSize = new Size(input.width(),input.height());
+            if(currentSize.equals(imageSizeScaling) && pixelsScaled && sampleLocationsNormalized.pixelScaleApplied) return;
+            // else, resize as needed.
+            assert(sampleLocationsNormalized.isValid());
+
+            int imageWidth = input.width();
+            int imageHeight = input.height();
+            int maxLength = Math.max(imageHeight,imageWidth);
+            leftPosition = new Point(imageWidth * sampleLocationsNormalized.leftPosition.x, imageHeight * sampleLocationsNormalized.leftPosition.y);
+            centerPosition = new Point(imageWidth * sampleLocationsNormalized.centerPosition.x, imageHeight * sampleLocationsNormalized.centerPosition.y);
+            rightPosition = new Point(imageWidth * sampleLocationsNormalized.rightPosition.x, imageHeight * sampleLocationsNormalized.rightPosition.y);
+            blockSize = new Size(imageWidth * sampleLocationsNormalized.blockSize.x, imageHeight * sampleLocationsNormalized.blockSize.y);
+            backgroundSize = new Size(imageWidth * sampleLocationsNormalized.backgroundSize.x, imageHeight * sampleLocationsNormalized.backgroundSize.y);
+
+            this.lineThickness = (int) Math.ceil(maxLength * sampleLocationsNormalized.lineThickness);
+            this.markerSize = (int) Math.ceil(maxLength * sampleLocationsNormalized.markerSize);
+
+            pixelsScaled = true;
+            imageSizeScaling = new Size(input.width(), input.height());
+            sampleLocationsNormalized.pixelScaleApplied = true;
+        }
+
     }
 
 

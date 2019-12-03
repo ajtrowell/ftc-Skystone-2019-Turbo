@@ -36,7 +36,6 @@ public class AveragingPipeline extends TernarySkystonePipeline
 
     public void setNormalizedLocations(SampleLocationsNormalized sampleLocationsNormalized) {
         this.normalizedLocations = sampleLocationsNormalized;
-        pixelsScaled = false;
     }
 
     AveragingPipeline() {
@@ -82,66 +81,23 @@ public class AveragingPipeline extends TernarySkystonePipeline
 
 
     // Sampling pixel locations
-    private Point imageSizeScaling = new Point(0,0); // Not scaled by default.
-    private boolean pixelsScaled = false;
-    private Point skystone = new Point();
-    private Point sub1PointA = new Point(185, 23); // -25 Stone2
-    private Point sub1PointB = new Point(195, 33);
-    private Point sub2PointA = new Point(185, 99); // -50 Stone3
-    private Point sub2PointB = new Point(195, 109);
-    private Point sub3PointA = new Point(185, 164); //-106 Stone4
-    private Point sub3PointB = new Point(195, 174);
-    private Point subBackgroundPointA = new Point(185, 164); //-106 Stone4
-    private Point subBackgroundPointB = new Point(195, 174);
-
-    private int lineThickness = 1;
-    private int markerSize = 10;
+    private SampleLocationsPx sampleLocationsPx = new SampleLocationsPx();
 
     // Output
-    // Demo2
-    private int position = 0; // output position
     private SkystoneRelativeLocation skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
-
+    private int position = 0; // output position
     public int getPosition() {
         return position;
     }
 
-
-    /**
-     * If the pixel size isn't scaled to the current image size, use normalized sizes and
-     * image size to calculate sample regions in pixels.
-     * @param input
-     */
-    private void scaleSamplingLocationToImageSize(Mat input) {
-        Point currentSize = new Point(input.width(),input.height());
-        if(currentSize.equals(imageSizeScaling) && pixelsScaled) return;
-        // else, resize as needed.
-
-        int imageWidth = input.width();
-        int imageHeight = input.height();
-        int maxLength = Math.max(imageHeight,imageWidth);
-
-        Point leftPosition = new Point(imageWidth * normalizedLocations.leftPosition.x, imageHeight * normalizedLocations.leftPosition.y);
-        Point centerPosition = new Point(imageWidth * normalizedLocations.centerPosition.x, imageHeight * normalizedLocations.centerPosition.y);
-        Point rightPosition = new Point(imageWidth * normalizedLocations.rightPosition.x, imageHeight * normalizedLocations.rightPosition.y);
-        Point blockSize = new Point(imageWidth * normalizedLocations.blockSize.x, imageHeight * normalizedLocations.blockSize.y);
-        Point backgroundSize = new Point(imageWidth * normalizedLocations.backgroundSize.x, imageHeight * normalizedLocations.backgroundSize.y);
-
-        this.lineThickness = (int) Math.ceil(maxLength * normalizedLocations.lineThickness);
-        this.markerSize = (int) Math.ceil(maxLength * normalizedLocations.markerSize);
-
-
-
-        pixelsScaled = true;
-        imageSizeScaling = new Point(input.width(), input.height());
-    }
 
 
     @Override
     public Mat processFrame(Mat input)
     {
         // Ensure that pixel locations are scaled to the current input image resolution.
-        scaleSamplingLocationToImageSize(input);
+        sampleLocationsPx.scaleSamplingPixelsToImageSizeAndNormalizedLocations(input,normalizedLocations);
+
 
         // Convert the image from RGB to YCrCb
         Imgproc.cvtColor(input, YCrCb, Imgproc.COLOR_RGB2YCrCb);
@@ -149,46 +105,48 @@ public class AveragingPipeline extends TernarySkystonePipeline
         // Extract the Cb channel from the image
         Core.extractChannel(YCrCb, Cb, 2);
 
-        // The the sample areas fromt the Cb channel
-        subMat1 = Cb.submat(new Rect(sub1PointA, sub1PointB));
-        subMat2 = Cb.submat(new Rect(sub2PointA, sub2PointB));
-        subMat3 = Cb.submat(new Rect(sub3PointA, sub3PointB));
+        // Define Sample Areas
+        Rect rect1 = new Rect(sampleLocationsPx.leftPosition,sampleLocationsPx.blockSize);
+        Rect rect2 = new Rect(sampleLocationsPx.centerPosition,sampleLocationsPx.blockSize);
+        Rect rect3 = new Rect(sampleLocationsPx.rightPosition,sampleLocationsPx.blockSize);
+        Rect rectBackground = new Rect(sampleLocationsPx.centerPosition,sampleLocationsPx.backgroundSize);
+
+        // The the sample areas from the Cb channel
+        subMat1 = Cb.submat(rect1);
+        subMat2 = Cb.submat(rect2);
+        subMat3 = Cb.submat(rect3);
+        subMatBackground = Cb.submat(rectBackground);
 
         // Average the sample areas
-        avg1 = (int)Core.mean(subMat1).val[0]; // Stone2
-        avg2 = (int)Core.mean(subMat2).val[0]; // Stone3
-        avg3 = (int)Core.mean(subMat3).val[0]; // Stone4
+        avg1 = (int)Core.mean(subMat1).val[0];
+        avg2 = (int)Core.mean(subMat2).val[0];
+        avg3 = (int)Core.mean(subMat3).val[0];
+        avgBackground = (int)Core.mean(subMatBackground).val[0];
 
         // Draw rectangles around the sample areas
-        Imgproc.rectangle(input, sub1PointA, sub1PointB, new Scalar(0, 0, 255), 1);
-        Imgproc.rectangle(input, sub2PointA, sub2PointB, new Scalar(0, 0, 255), 1);
-        Imgproc.rectangle(input, sub3PointA, sub3PointB, new Scalar(0, 0, 255), 1);
+        Scalar rectangleColor = new Scalar(0, 0, 255);
+        Imgproc.rectangle(input, rect1, rectangleColor, sampleLocationsPx.lineThickness);
+        Imgproc.rectangle(input, rect2, rectangleColor, sampleLocationsPx.lineThickness);
+        Imgproc.rectangle(input, rect3, rectangleColor, sampleLocationsPx.lineThickness);
 
         // Figure out which sample zone had the lowest contrast from blue (lightest color)
         max = Math.max(avg1, Math.max(avg2, avg3));
 
         // Draw a circle on the detected skystone
+        Scalar markerColor = new Scalar(255,52,235);
         if(max == avg1) {
-            skystone.x = (sub1PointA.x + sub1PointB.x) / 2;
-            skystone.y = (sub1PointA.y + sub1PointB.y) / 2;
-            Imgproc.circle(input, skystone, 5, new Scalar(225, 52, 235), -1);
-            position = 2;
-            // Stone2
-        } else if(max == avg2) {
-            skystone.x = (sub2PointA.x + sub2PointB.x) / 2;
-            skystone.y = (sub2PointA.y + sub2PointB.y) / 2;
-            Imgproc.circle(input, skystone, 5, new Scalar(225, 52, 235), -1);
-            // Stone3
-            position = 3;
-        } else if(max == avg3) {
-            skystone.x = (sub3PointA.x + sub3PointB.x) / 2;
-            skystone.y = (sub3PointA.y + sub3PointB.y) / 2;
-            Imgproc.circle(input, skystone, 5, new Scalar(225, 52, 235), -1);
-            // Stone1
+            sampleLocationsPx.skystone = sampleLocationsPx.leftPosition;
             position = 1;
+        } else if(max == avg2) {
+            sampleLocationsPx.skystone = sampleLocationsPx.centerPosition;
+            position = 2;
+        } else if(max == avg3) {
+            sampleLocationsPx.skystone = sampleLocationsPx.rightPosition;
+            position = 3;
         } else {
             position = 1;
         }
+        Imgproc.circle(input, sampleLocationsPx.skystone, sampleLocationsPx.markerSize, markerColor, -1);
 
         // Free the allocated submat memory
         subMat1.release();
@@ -197,6 +155,8 @@ public class AveragingPipeline extends TernarySkystonePipeline
         subMat2 = null;
         subMat3.release();
         subMat3 = null;
+        subMatBackground.release();
+        subMatBackground = null;
 
         return input;
     }
