@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.Utilities.Color;
  * SkystoneDetector can use teamColor and starting location information to provide more absolute
  * location information for the skystone, such as location index, where 0 is near the field center.
  */
-public class SkystoneDetectorOpenCV {
+public class SkystoneDetector {
 
     RobotHardware opmode;
     HardwareMap hardwareMap;
@@ -28,7 +28,7 @@ public class SkystoneDetectorOpenCV {
     private final int cols = 480;
 
 
-    public SkystoneDetectorOpenCV(RobotHardware opmode, Color.Ftc teamColor) {
+    public SkystoneDetector(RobotHardware opmode, Color.Ftc teamColor) {
        this.teamColor = teamColor;
        this.opmode = opmode;
        this.hardwareMap = opmode.hardwareMap;

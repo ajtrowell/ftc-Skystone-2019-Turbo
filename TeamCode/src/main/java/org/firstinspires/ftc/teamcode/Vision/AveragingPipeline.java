@@ -7,7 +7,6 @@ import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-import org.openftc.easyopencv.OpenCvPipeline;
 
 /*
  * An example image processing pipeline to be run upon receipt of each frame from the camera.
@@ -27,6 +26,37 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 public class AveragingPipeline extends TernarySkystonePipeline
 {
+
+    // Relative Sampling locations. Values normalized to image size, from [0,1].
+    private SampleLocationsNormalized normalizedLocations;
+
+    public SampleLocationsNormalized getNormalizedLocations() {
+        return normalizedLocations;
+    }
+
+    public void setNormalizedLocations(SampleLocationsNormalized sampleLocationsNormalized) {
+        this.normalizedLocations = sampleLocationsNormalized;
+        pixelsScaled = false;
+    }
+
+    AveragingPipeline() {
+        SampleLocationsNormalized visionNormalizedLocations =
+                new SampleLocationsNormalized();
+        visionNormalizedLocations.leftPosition = new Point(0.25,0.5);
+        visionNormalizedLocations.centerPosition = new Point(0.5,0.5);
+        visionNormalizedLocations.rightPosition = new Point(0.75,0.5);
+        visionNormalizedLocations.blockSize = new Point(0.2, 0.2);
+        visionNormalizedLocations.backgroundSize = new Point(0.6, 0.2);
+        visionNormalizedLocations.lineThickness = 0.01;
+        visionNormalizedLocations.markerSize = 0.1;
+        this.normalizedLocations = visionNormalizedLocations;
+
+    }
+
+    AveragingPipeline(SampleLocationsNormalized sampleLocationsNormalized) {
+        this.normalizedLocations = sampleLocationsNormalized;
+    }
+
     /*
      * NOTE: if you wish to use additional Mat objects in your processing pipeline, it is
      * highly recommended to declare them here as instance variables and re-use them for
@@ -42,25 +72,18 @@ public class AveragingPipeline extends TernarySkystonePipeline
     private Mat subMat1;
     private Mat subMat2;
     private Mat subMat3;
+    private Mat subMatBackground;
     private int max;
     private int avg1;
     private int avg2;
     private int avg3;
+    private int avgBackground;
 
-    // Relative Sampling locations. Values normalized to image size, from [0,1].
-    private static float rectHeight = .6f/8f;
-    private static float rectWidth = 1.5f/8f;
-
-    private static float offsetX = 0f/8f;//changing this moves the three rects and the three circles left or right, range : (-2, 2) not inclusive
-    private static float offsetY = 0f/8f;//changing this moves the three rects and circles up or down, range: (-4, 4) not inclusive
-
-    private static float[] midPos = {4f/8f+offsetX, 4f/8f+offsetY};//0 = col, 1 = row
-    private static float[] leftPos = {2f/8f+offsetX, 4f/8f+offsetY};
-    private static float[] rightPos = {6f/8f+offsetX, 4f/8f+offsetY};
 
 
     // Sampling pixel locations
     private Point imageSizeScaling = new Point(0,0); // Not scaled by default.
+    private boolean pixelsScaled = false;
     private Point skystone = new Point();
     private Point sub1PointA = new Point(185, 23); // -25 Stone2
     private Point sub1PointB = new Point(195, 33);
@@ -68,6 +91,11 @@ public class AveragingPipeline extends TernarySkystonePipeline
     private Point sub2PointB = new Point(195, 109);
     private Point sub3PointA = new Point(185, 164); //-106 Stone4
     private Point sub3PointB = new Point(195, 174);
+    private Point subBackgroundPointA = new Point(185, 164); //-106 Stone4
+    private Point subBackgroundPointB = new Point(195, 174);
+
+    private int lineThickness = 1;
+    private int markerSize = 10;
 
     // Output
     // Demo2
@@ -78,6 +106,7 @@ public class AveragingPipeline extends TernarySkystonePipeline
         return position;
     }
 
+
     /**
      * If the pixel size isn't scaled to the current image size, use normalized sizes and
      * image size to calculate sample regions in pixels.
@@ -85,9 +114,26 @@ public class AveragingPipeline extends TernarySkystonePipeline
      */
     private void scaleSamplingLocationToImageSize(Mat input) {
         Point currentSize = new Point(input.width(),input.height());
-        if(currentSize.equals(imageSizeScaling)) return;
+        if(currentSize.equals(imageSizeScaling) && pixelsScaled) return;
+        // else, resize as needed.
+
+        int imageWidth = input.width();
+        int imageHeight = input.height();
+        int maxLength = Math.max(imageHeight,imageWidth);
+
+        Point leftPosition = new Point(imageWidth * normalizedLocations.leftPosition.x, imageHeight * normalizedLocations.leftPosition.y);
+        Point centerPosition = new Point(imageWidth * normalizedLocations.centerPosition.x, imageHeight * normalizedLocations.centerPosition.y);
+        Point rightPosition = new Point(imageWidth * normalizedLocations.rightPosition.x, imageHeight * normalizedLocations.rightPosition.y);
+        Point blockSize = new Point(imageWidth * normalizedLocations.blockSize.x, imageHeight * normalizedLocations.blockSize.y);
+        Point backgroundSize = new Point(imageWidth * normalizedLocations.backgroundSize.x, imageHeight * normalizedLocations.backgroundSize.y);
+
+        this.lineThickness = (int) Math.ceil(maxLength * normalizedLocations.lineThickness);
+        this.markerSize = (int) Math.ceil(maxLength * normalizedLocations.markerSize);
 
 
+
+        pixelsScaled = true;
+        imageSizeScaling = new Point(input.width(), input.height());
     }
 
 
