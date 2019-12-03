@@ -47,7 +47,7 @@ public class VisionTest {
 
     @Before
     public void initialize() {
-        String filePath = IMAGE_READ_PATH + "iphone7_27inches_by_2.5_up_inches.jpg";
+        String filePath = IMAGE_READ_PATH + "iphone7_27inches_by_2.5_up_inches_left.jpg";
         input = Imgcodecs.imread(filePath);
 
         input = cropAndResize(input,640,480);
@@ -109,6 +109,7 @@ public class VisionTest {
         Mat outputMat = testPipeline.processFrame(input);
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline.jpg",outputMat);
         testPipeline.getStatus();
+        System.out.println(testPipeline.getSkystoneRelativeLocation());
     }
 
 
