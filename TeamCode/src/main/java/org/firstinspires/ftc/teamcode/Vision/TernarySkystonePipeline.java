@@ -9,6 +9,8 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Set;
 
 public abstract class TernarySkystonePipeline extends OpenCvPipeline {
 
@@ -209,4 +211,133 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
     }
 
 
+    /**
+     * A single value in the range [0.0,1.0], which is scaled to pixelSize of an image.
+     */
+    public class NormalizedValue {
+        private double normalizedValue = 0.0;
+
+        public NormalizedValue() {
+        }
+
+        public NormalizedValue(double normalizedValue) {
+            // Throw an exception if input value is not between 0.0 and 1.0, inclusive.
+            setNormalizedValue(normalizedValue);
+        }
+
+        void setNormalizedValue(double normalizedValue) {
+            // Throw an exception if input value is not between 0.0 and 1.0, inclusive.
+            if(normalizedValue < 0.0 || normalizedValue > 1.0) {
+                throw new RuntimeException("NormalizedValue out of bounds: " + String.valueOf(normalizedValue));
+            }
+            this.normalizedValue = normalizedValue;
+        }
+
+        public double getNormalizedValue() {
+            return normalizedValue;
+        }
+
+        public double getPixelScaledValue(int pixelSizeMax) {
+            return normalizedValue * (double) pixelSizeMax;
+        }
+    }
+
+    /**
+     * A ordered pair of normalized values, suitable for use as XY
+     */
+    public class NormalizedPair {
+        private NormalizedValue x = new NormalizedValue();
+        private NormalizedValue y = new NormalizedValue();
+
+        public NormalizedPair() {
+        }
+
+        public NormalizedPair(double x, double y) {
+            this.x.setNormalizedValue(x);
+            this.y.setNormalizedValue(y);
+        }
+
+        public NormalizedPair(NormalizedValue x, NormalizedValue y) {
+            this.x.setNormalizedValue(x.getNormalizedValue());
+            this.y.setNormalizedValue(y.getNormalizedValue());
+        }
+
+        public void setX(double x) {
+            this.x.setNormalizedValue(x);
+        }
+
+        public void setY(double y) {
+            this.y.setNormalizedValue(y);
+        }
+
+        public void setXY(double x, double y) {
+            this.x.setNormalizedValue(x);
+            this.y.setNormalizedValue(y);
+        }
+
+        public double getNormalizedX() {
+            return this.x.getNormalizedValue();
+        }
+
+        public double getNormalizedY() {
+            return this.y.getNormalizedValue();
+        }
+
+        public double getPixelScaledX(int pixelMax) {
+            return this.x.getPixelScaledValue(pixelMax);
+        }
+
+        public double getPixelScaledX(Mat input) {
+            int pixelMax = input.width();
+            return this.x.getPixelScaledValue(pixelMax);
+        }
+
+        public double getPixelScaledY(int pixelMax) {
+            return this.y.getPixelScaledValue(pixelMax);
+        }
+
+        public double getPixelScaledY(Mat input) {
+            int pixelMax = input.height();
+            return this.y.getPixelScaledValue(pixelMax);
+        }
+
+        public Point getOpenCvPoint(Mat input) {
+            return new Point(getPixelScaledX(input), getPixelScaledY(input));
+        }
+
+        public Size getOpenCvSize(Mat input) {
+            return new Size(getPixelScaledX(input), getPixelScaledY(input));
+        }
+
+    }
+
+    /**
+     * Stores the center position and size of a rectangle as normalized values, and returns them
+     * either pixel scaled, or as relevant openCV objects.
+     */
+    public class NormalizedRectangle {
+        public NormalizedPair centerXY = new NormalizedPair(0.5,0.5);
+        public NormalizedPair sizeXY = new NormalizedPair(0.0,0.0);
+
+        public NormalizedRectangle() {}
+
+        public NormalizedRectangle(double center_x_normalized, double center_y_normalized,
+                                   double size_x_normalized, double size_y_normalized) {
+            centerXY.setXY(center_x_normalized,center_y_normalized);
+            sizeXY.setXY(size_x_normalized,size_y_normalized);
+            //errorChecking();
+        }
+
+        private void errorChecking() {
+            assert(centerXY.getNormalizedX() - sizeXY.getNormalizedX()/2.0 >= 0.0);
+            assert(centerXY.getNormalizedX() + sizeXY.getNormalizedX()/2.0 <= 1.0);
+            assert(centerXY.getNormalizedY() - sizeXY.getNormalizedY()/2.0 >= 0.0);
+            assert(centerXY.getNormalizedY() + sizeXY.getNormalizedY()/2.0 <= 1.0);
+        }
+
+        public Rect getOpenCVRectangle(Mat input) {
+            Rect leftRect = getCenteredRect(centerXY.getOpenCvPoint(input),sizeXY.getOpenCvSize(input));
+            return leftRect;
+        }
+    }
 }
