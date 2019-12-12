@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.Vision;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
@@ -11,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /*
- * An example image processing pipeline to be run upon receipt of each frame from the camera.
+ * An image processing pipeline to be run upon receipt of each frame from the camera.
  * Note that the processFrame() method is called serially from the frame worker thread -
  * that is, a new camera frame will not come in while you're still processing a previous one.
  * In other words, the processFrame() method will never be called multiple times simultaneously.
