@@ -12,9 +12,8 @@ import java.io.File;
 
 public abstract class TernarySkystonePipeline extends OpenCvPipeline {
 
-    public abstract SkystoneRelativeLocation getSkystoneRelativeLocation();
-
     public abstract void getStatus();
+
 
     public Mat lastInputImage;
 
@@ -57,7 +56,7 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
     /**
      * A single value in the range [0.0,1.0], which is scaled to pixelSize of an image.
      */
-    static public class NormalizedValue {
+    static public class NormalizedValue implements Cloneable{
         private double normalizedValue = 0.0;
 
         public NormalizedValue() {
@@ -88,12 +87,23 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
             int pixelSizeMax = Math.max(input.height(),input.width());
             return getPixelScaledValue(pixelSizeMax);
         }
+
+        @Override
+        public Object clone()
+        {
+            try {
+                return super.clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
     }
 
     /**
      * A ordered pair of normalized values, suitable for use as XY
      */
-    static public class NormalizedPair {
+    static public class NormalizedPair implements Cloneable{
         private NormalizedValue x = new NormalizedValue();
         private NormalizedValue y = new NormalizedValue();
 
@@ -157,13 +167,24 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
             return new Size(getPixelScaledX(input), getPixelScaledY(input));
         }
 
+
+        @Override
+        public Object clone()
+        {
+            try {
+                return super.clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
     }
 
     /**
      * Stores the center position and size of a rectangle as normalized values, and returns them
      * either pixel scaled, or as relevant openCV objects.
      */
-    static public class NormalizedRectangle {
+    static public class NormalizedRectangle implements Cloneable{
         public NormalizedPair centerXY = new NormalizedPair(0.5,0.5);
         public NormalizedPair sizeXY = new NormalizedPair(0.0,0.0);
 
@@ -195,6 +216,18 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
         public Rect getCenteredRect(Point point, Size size) {
             Point topLeftCorner = new Point(point.x - size.width/2, point.y - size.height/2);
             return new Rect(topLeftCorner,size);
+        }
+
+
+        @Override
+        public Object clone()
+        {
+            try {
+                return super.clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+            return null;
         }
     }
 

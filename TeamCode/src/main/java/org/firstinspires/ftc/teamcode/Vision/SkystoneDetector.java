@@ -22,7 +22,7 @@ public class SkystoneDetector {
     HardwareMap hardwareMap;
     Color.Ftc teamColor;
     public OpenCvCamera webcam;
-    public TernarySkystonePipeline ternarySkystonePipeline;
+    public AveragingPipeline averagingPipeline;
 
     private final int rows = 640;
     private final int cols = 480;
@@ -32,21 +32,38 @@ public class SkystoneDetector {
        this.teamColor = teamColor;
        this.opmode = opmode;
        this.hardwareMap = opmode.hardwareMap;
-       this.ternarySkystonePipeline = new AveragingPipeline();
-       init(this.ternarySkystonePipeline);
+       this.averagingPipeline = new AveragingPipeline();
+       init(this.averagingPipeline);
     }
 
-    public void init(TernarySkystonePipeline ternarySkystonePipeline) {
+    public void init(AveragingPipeline averagingPipeline) {
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         webcam.openCameraDevice();
-        webcam.setPipeline(ternarySkystonePipeline);
+        webcam.setPipeline(averagingPipeline);
         // If the resolution specified is not supported by the camera, an error will be thrown.
         webcam.startStreaming(rows, cols, OpenCvCameraRotation.UPRIGHT);
     }
 
+
+    SkystoneRelativeLocation skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
     public SkystoneRelativeLocation getSkystoneRelativeLocation() {
-        return ternarySkystonePipeline.getSkystoneRelativeLocation();
+        // TODO: Ensure the enum locations are correct, based on the positions.
+        switch (averagingPipeline.getMinIndex()) {
+            case 0:
+                skystoneRelativeLocation = SkystoneRelativeLocation.LEFT;
+                break;
+            case 1:
+                skystoneRelativeLocation = SkystoneRelativeLocation.CENTER;
+                break;
+            case 2:
+                skystoneRelativeLocation = SkystoneRelativeLocation.RIGHT;
+                break;
+            default:
+                skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
+                break;
+        }
+        return skystoneRelativeLocation;
     }
 
     /*

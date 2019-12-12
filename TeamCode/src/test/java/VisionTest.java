@@ -62,7 +62,7 @@ public class VisionTest {
 
     @Test
     public void imageWrite() {
-        String writePath = IMAGE_WRITE_PATH + "outputTestImage.jpg";
+        String writePath = IMAGE_WRITE_PATH + "writeTestImage.jpg";
         Imgcodecs.imwrite(writePath, input);
         File outputFile = new File(writePath);
         assertThat(outputFile.exists()).isTrue();
@@ -104,20 +104,35 @@ public class VisionTest {
 
 
     @Test
-    public void testSkystoneDetectorPipeline() {
+    public void testDefaultPipeline() {
+        TernarySkystonePipeline testPipeline = new AveragingPipeline();
+        Mat outputMat = testPipeline.processFrame(input);
+        Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline_default.jpg",outputMat);
+        testPipeline.getStatus();
+//        System.out.println(testPipeline.getSkystoneRelativeLocation());
+//        testPipeline.saveInputImage(IMAGE_WRITE_PATH + "anotherFolder/");
+    }
+
+
+    @Test
+    public void testCustomPipeline() {
         ArrayList<TernarySkystonePipeline.NormalizedRectangle> scanRegions = new ArrayList<>();
         double yPosition = 0.55;
         double[] normalizedSize = {0.08, 0.10};
-        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.25,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.07,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.18,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.3,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.35,yPosition+0.1,normalizedSize[0],normalizedSize[1]));
         scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.5,yPosition,normalizedSize[0],normalizedSize[1]));
         scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.75,yPosition,normalizedSize[0],normalizedSize[1]));
-        TernarySkystonePipeline testPipeline = new AveragingPipeline();
+        TernarySkystonePipeline testPipeline = new AveragingPipeline(scanRegions);
         Mat outputMat = testPipeline.processFrame(input);
-        Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline.jpg",outputMat);
+        Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline_custom.jpg",outputMat);
         testPipeline.getStatus();
-        System.out.println(testPipeline.getSkystoneRelativeLocation());
+//        System.out.println(testPipeline.getSkystoneRelativeLocation());
 //        testPipeline.saveInputImage(IMAGE_WRITE_PATH + "anotherFolder/");
     }
+
 
     public void createFolders() {
         Integer imageNumber = 0;

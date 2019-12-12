@@ -50,16 +50,16 @@ public class AveragingPipeline extends TernarySkystonePipeline
 
     public AveragingPipeline(ArrayList<NormalizedRectangle> scanRegions, NormalizedRectangle backgroundRegion, NormalizedValue lineThickness, NormalizedValue markerSize) {
         // Warning: these are copied by reference
-        this.scanRegions = scanRegions;
-        this.backgroundRegion = backgroundRegion;
-        this.lineThickness = lineThickness;
-        this.markerSize = markerSize;
+        this.scanRegions = (ArrayList) scanRegions.clone();
+        this.backgroundRegion = (NormalizedRectangle) backgroundRegion.clone();
+        this.lineThickness = (NormalizedValue) lineThickness.clone();
+        this.markerSize = (NormalizedValue) markerSize.clone();
     }
 
     // Infer background size from normalized regions.
     public AveragingPipeline(ArrayList<NormalizedRectangle> scanRegions) {
         // Warning: these are copied by reference
-        this.scanRegions = scanRegions;
+        this.scanRegions = (ArrayList<NormalizedRectangle>) scanRegions.clone();
         // Default values for line and marker sizes.
         this.lineThickness = new NormalizedValue(0.005);
         this.markerSize = new NormalizedValue(0.03);
@@ -67,24 +67,14 @@ public class AveragingPipeline extends TernarySkystonePipeline
         // Calculate a background rectangle which will overlap the sample regions.
         Double[] minXY = {1.0,1.0};
         Double[] maxXY = {0.0,0.0};
-        ArrayList<Double> xPosition = new ArrayList<>();
-        ArrayList<Double> yPosition = new ArrayList<>();
         for(NormalizedRectangle scanRegion: scanRegions) {
             minXY[0] = Math.min(minXY[0],scanRegion.centerXY.getNormalizedX()-scanRegion.sizeXY.getNormalizedX()/2.0);
             maxXY[0] = Math.max(maxXY[0],scanRegion.centerXY.getNormalizedX()+scanRegion.sizeXY.getNormalizedX()/2.0);
             minXY[1] = Math.min(minXY[1],scanRegion.centerXY.getNormalizedY()-scanRegion.sizeXY.getNormalizedY()/2.0);
             maxXY[1] = Math.max(maxXY[1],scanRegion.centerXY.getNormalizedY()+scanRegion.sizeXY.getNormalizedY()/2.0);
-            xPosition.add(scanRegion.centerXY.getNormalizedX());
-            yPosition.add(scanRegion.centerXY.getNormalizedY());
         }
         // Calculate average x,y center position:
-        double[] averageCenterXY = {0.0,0.0};
-        for(int i = 0; i < xPosition.size(); ++i) {
-           averageCenterXY[0] += xPosition.get(i);
-           averageCenterXY[1] += yPosition.get(i);
-        }
-        averageCenterXY[0] = averageCenterXY[0] / (double) xPosition.size();
-        averageCenterXY[1] = averageCenterXY[1] / (double) yPosition.size();
+        double[] averageCenterXY = {(maxXY[0] + minXY[0]) / 2.0, (maxXY[1] + minXY[1]) / 2.0};
         double[] sizeXY = {maxXY[0] - minXY[0],maxXY[1] - minXY[1]};
         this.backgroundRegion = new NormalizedRectangle(averageCenterXY[0], averageCenterXY[1], sizeXY[0], sizeXY[1]);
     }
@@ -111,45 +101,33 @@ public class AveragingPipeline extends TernarySkystonePipeline
 
 
     public void getStatus() {
+        System.out.print("Scans: ");
         for(Integer thisAvg : avgArray) {
             System.out.print(thisAvg.toString() + ", ");
         }
-        System.out.println();
+        System.out.println("Background: " + backgroundAvg);
         //return new ArrayList<>(avg1,avg2,avg3,avgBackground);
     }
 
-    public ArrayList<Integer> getAvgArray() {
-        return avgArray;
+    public ArrayList<Integer> getData() {
+        ArrayList<Integer> tempArray = (ArrayList)avgArray.clone();
+        return tempArray;
     }
 
-    // Output
-    private SkystoneRelativeLocation skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
-    private int position = 0; // output position
-    public int getPosition() {
-        return position;
+    public Integer getBackground() {
+        return backgroundAvg;
     }
 
-    @Override
-    public SkystoneRelativeLocation getSkystoneRelativeLocation() {
-        // TODO: Ensure the enum locations are correct, based on the positions.
-        switch (position) {
-            case 0:
-                skystoneRelativeLocation = SkystoneRelativeLocation.LEFT;
-                break;
-            case 1:
-                skystoneRelativeLocation = SkystoneRelativeLocation.CENTER;
-                break;
-            case 2:
-                skystoneRelativeLocation = SkystoneRelativeLocation.RIGHT;
-                break;
-            default:
-                skystoneRelativeLocation = SkystoneRelativeLocation.UNKNOWN;
-                break;
-        }
-
-        return skystoneRelativeLocation;
+    public ArrayList<Integer> getAllData() {
+        ArrayList<Integer> tempArray = (ArrayList)avgArray.clone();
+        tempArray.add(backgroundAvg);
+        return tempArray;
     }
 
+
+    public int getMinIndex() {
+        return minIndex;
+    }
 
     @Override
     public Mat processFrame(Mat input)
@@ -178,8 +156,10 @@ public class AveragingPipeline extends TernarySkystonePipeline
         }
         avgArray = tempAvgArray;
 
-        // Draw rectangles around the background area
-        Imgproc.rectangle(input, backgroundRegion.getOpenCVRectangle(input), backgroundRectangleColor, (int) Math.ceil(lineThickness.getPixelScaledValue(input)));
+        // Repeat above steps for the background area
+        subMat = Cb.submat(backgroundRegion.getOpenCVRectangle(input));
+        backgroundAvg = (int)Core.mean(subMat).val[0];
+        Imgproc.rectangle(input, backgroundRegion.getOpenCVRectangle(input), backgroundRectangleColor, (int) Math.ceil(lineThickness.getPixelScaledValue(input)/3.0));
 
         // Figure out which sample zone had the lowest contrast from blue (lightest color)
         min = Collections.min(avgArray);
@@ -192,10 +172,22 @@ public class AveragingPipeline extends TernarySkystonePipeline
                 ++minIndex;
             }
         }
+
         // Draw a circle on the detected skystone
         Scalar markerColor = new Scalar(255,52,235);
-        Imgproc.circle(input, scanRegions.get(minIndex).centerXY.getOpenCvPoint(input),
-                (int) Math.ceil(markerSize.getPixelScaledValue(input)), markerColor, -1);
+
+        boolean singleRegion = false;
+        if(singleRegion) {
+            Imgproc.circle(input, scanRegions.get(minIndex).centerXY.getOpenCvPoint(input),
+                    (int) Math.ceil(markerSize.getPixelScaledValue(input)), markerColor, -1);
+        } else {
+           for(int i = 0; i < avgArray.size(); ++i)  {
+              if (avgArray.get(i) < backgroundAvg) {
+                  Imgproc.circle(input, scanRegions.get(i).centerXY.getOpenCvPoint(input),
+                          (int) Math.ceil(markerSize.getPixelScaledValue(input)), markerColor, -1);
+              }
+           }
+        }
 
 
         // Free the allocated submat memory
