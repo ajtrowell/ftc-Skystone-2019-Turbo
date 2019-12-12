@@ -31,6 +31,7 @@ public class AveragingPipeline extends TernarySkystonePipeline
 
     // Relative Sampling locations. Values normalized to image size, from [0,1].
     public ArrayList<NormalizedRectangle> scanRegions = new ArrayList<>();
+    NormalizedRectangle backgroundRegion = new NormalizedRectangle();
     public NormalizedValue lineThickness = new NormalizedValue(0.01);
     public NormalizedValue markerSize = new NormalizedValue(0.03);
 
@@ -42,24 +43,50 @@ public class AveragingPipeline extends TernarySkystonePipeline
         scanRegions.add(new NormalizedRectangle(0.25,yPosition,normalizedSize[0],normalizedSize[1]));
         scanRegions.add(new NormalizedRectangle(0.5,yPosition,normalizedSize[0],normalizedSize[1]));
         scanRegions.add(new NormalizedRectangle(0.75,yPosition,normalizedSize[0],normalizedSize[1]));
-        scanRegions.add(new NormalizedRectangle(0.5,yPosition,backgroundSize[0],backgroundSize[1]));
+        backgroundRegion = new NormalizedRectangle(0.5,yPosition,backgroundSize[0],backgroundSize[1]);
         this.lineThickness = new NormalizedValue(0.005);
         this.markerSize = new NormalizedValue(0.03);
     }
 
-    public AveragingPipeline(ArrayList<NormalizedRectangle> scanRegions, NormalizedValue lineThickness, NormalizedValue markerSize) {
+    public AveragingPipeline(ArrayList<NormalizedRectangle> scanRegions, NormalizedRectangle backgroundRegion, NormalizedValue lineThickness, NormalizedValue markerSize) {
         // Warning: these are copied by reference
         this.scanRegions = scanRegions;
+        this.backgroundRegion = backgroundRegion;
         this.lineThickness = lineThickness;
         this.markerSize = markerSize;
     }
 
+    // Infer background size from normalized regions.
     public AveragingPipeline(ArrayList<NormalizedRectangle> scanRegions) {
         // Warning: these are copied by reference
         this.scanRegions = scanRegions;
         // Default values for line and marker sizes.
         this.lineThickness = new NormalizedValue(0.005);
         this.markerSize = new NormalizedValue(0.03);
+
+        // Calculate a background rectangle which will overlap the sample regions.
+        Double[] minXY = {1.0,1.0};
+        Double[] maxXY = {0.0,0.0};
+        ArrayList<Double> xPosition = new ArrayList<>();
+        ArrayList<Double> yPosition = new ArrayList<>();
+        for(NormalizedRectangle scanRegion: scanRegions) {
+            minXY[0] = Math.min(minXY[0],scanRegion.centerXY.getNormalizedX()-scanRegion.sizeXY.getNormalizedX()/2.0);
+            maxXY[0] = Math.max(maxXY[0],scanRegion.centerXY.getNormalizedX()+scanRegion.sizeXY.getNormalizedX()/2.0);
+            minXY[1] = Math.min(minXY[1],scanRegion.centerXY.getNormalizedY()-scanRegion.sizeXY.getNormalizedY()/2.0);
+            maxXY[1] = Math.max(maxXY[1],scanRegion.centerXY.getNormalizedY()+scanRegion.sizeXY.getNormalizedY()/2.0);
+            xPosition.add(scanRegion.centerXY.getNormalizedX());
+            yPosition.add(scanRegion.centerXY.getNormalizedY());
+        }
+        // Calculate average x,y center position:
+        double[] averageCenterXY = {0.0,0.0};
+        for(int i = 0; i < xPosition.size(); ++i) {
+           averageCenterXY[0] += xPosition.get(i);
+           averageCenterXY[1] += yPosition.get(i);
+        }
+        averageCenterXY[0] = averageCenterXY[0] / (double) xPosition.size();
+        averageCenterXY[1] = averageCenterXY[1] / (double) yPosition.size();
+        double[] sizeXY = {maxXY[0] - minXY[0],maxXY[1] - minXY[1]};
+        this.backgroundRegion = new NormalizedRectangle(averageCenterXY[0], averageCenterXY[1], sizeXY[0], sizeXY[1]);
     }
 
     /*
@@ -79,6 +106,8 @@ public class AveragingPipeline extends TernarySkystonePipeline
     private int min;
     private int minIndex;
     private ArrayList<Integer> avgArray = new ArrayList<>();
+    private int backgroundAvg = 0;
+
 
 
     public void getStatus() {
@@ -135,7 +164,8 @@ public class AveragingPipeline extends TernarySkystonePipeline
         Core.extractChannel(YCrCb, Cb, 2);
 
         // Colors for drawing regions
-        Scalar rectangleColor = new Scalar(0, 0, 255);
+        Scalar scanRectangleColor = new Scalar(0, 0, 255);
+        Scalar backgroundRectangleColor = new Scalar(255, 0, 0);
 
         ArrayList<Integer> tempAvgArray = new ArrayList<>();
         for(NormalizedRectangle normalizedRectangle: scanRegions) {
@@ -144,10 +174,12 @@ public class AveragingPipeline extends TernarySkystonePipeline
             // Average the sample areas and store in array
             tempAvgArray.add((int)Core.mean(subMat).val[0]);
             // Draw rectangles around the sample areas
-            Imgproc.rectangle(input, normalizedRectangle.getOpenCVRectangle(input), rectangleColor, (int) Math.ceil(lineThickness.getPixelScaledValue(input)));
+            Imgproc.rectangle(input, normalizedRectangle.getOpenCVRectangle(input), scanRectangleColor, (int) Math.ceil(lineThickness.getPixelScaledValue(input)));
         }
         avgArray = tempAvgArray;
 
+        // Draw rectangles around the background area
+        Imgproc.rectangle(input, backgroundRegion.getOpenCVRectangle(input), backgroundRectangleColor, (int) Math.ceil(lineThickness.getPixelScaledValue(input)));
 
         // Figure out which sample zone had the lowest contrast from blue (lightest color)
         min = Collections.min(avgArray);

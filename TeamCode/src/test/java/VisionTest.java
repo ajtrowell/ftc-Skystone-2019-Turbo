@@ -105,6 +105,12 @@ public class VisionTest {
 
     @Test
     public void testSkystoneDetectorPipeline() {
+        ArrayList<TernarySkystonePipeline.NormalizedRectangle> scanRegions = new ArrayList<>();
+        double yPosition = 0.55;
+        double[] normalizedSize = {0.08, 0.10};
+        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.25,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.5,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.75,yPosition,normalizedSize[0],normalizedSize[1]));
         TernarySkystonePipeline testPipeline = new AveragingPipeline();
         Mat outputMat = testPipeline.processFrame(input);
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline.jpg",outputMat);

@@ -57,7 +57,7 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
     /**
      * A single value in the range [0.0,1.0], which is scaled to pixelSize of an image.
      */
-    public class NormalizedValue {
+    static public class NormalizedValue {
         private double normalizedValue = 0.0;
 
         public NormalizedValue() {
@@ -93,7 +93,7 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
     /**
      * A ordered pair of normalized values, suitable for use as XY
      */
-    public class NormalizedPair {
+    static public class NormalizedPair {
         private NormalizedValue x = new NormalizedValue();
         private NormalizedValue y = new NormalizedValue();
 
@@ -163,7 +163,7 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
      * Stores the center position and size of a rectangle as normalized values, and returns them
      * either pixel scaled, or as relevant openCV objects.
      */
-    public class NormalizedRectangle {
+    static public class NormalizedRectangle {
         public NormalizedPair centerXY = new NormalizedPair(0.5,0.5);
         public NormalizedPair sizeXY = new NormalizedPair(0.0,0.0);
 
@@ -191,11 +191,12 @@ public abstract class TernarySkystonePipeline extends OpenCvPipeline {
             Rect leftRect = getCenteredRect(centerXY.getOpenCvPoint(input),sizeXY.getOpenCvSize(input));
             return leftRect;
         }
+
+        public Rect getCenteredRect(Point point, Size size) {
+            Point topLeftCorner = new Point(point.x - size.width/2, point.y - size.height/2);
+            return new Rect(topLeftCorner,size);
+        }
     }
 
-    public Rect getCenteredRect(Point point, Size size) {
-        Point topLeftCorner = new Point(point.x - size.width/2, point.y - size.height/2);
-        return new Rect(topLeftCorner,size);
-    }
 
 }
