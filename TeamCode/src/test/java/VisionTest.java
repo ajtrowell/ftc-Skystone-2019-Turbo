@@ -3,6 +3,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.firstinspires.ftc.teamcode.Vision.AveragingPipeline;
 import org.firstinspires.ftc.teamcode.Vision.SinglePixelPipeline;
 
+import org.firstinspires.ftc.teamcode.Vision.SkystoneDetector;
 import org.firstinspires.ftc.teamcode.Vision.TernarySkystonePipeline;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,6 +17,10 @@ import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvPipeline;
+
+import static org.firstinspires.ftc.teamcode.Vision.TernarySkystonePipeline.NormalizedValue;
+import static org.firstinspires.ftc.teamcode.Vision.TernarySkystonePipeline.NormalizedPair;
+import static org.firstinspires.ftc.teamcode.Vision.TernarySkystonePipeline.NormalizedRectangle;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -105,7 +110,8 @@ public class VisionTest {
 
     @Test
     public void testDefaultPipeline() {
-        TernarySkystonePipeline testPipeline = new AveragingPipeline();
+        AveragingPipeline testPipeline = new AveragingPipeline();
+        testPipeline = SkystoneDetector.getAveragingPipelineForBlue();
         Mat outputMat = testPipeline.processFrame(input);
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline_default.jpg",outputMat);
         testPipeline.getStatus();
@@ -116,16 +122,16 @@ public class VisionTest {
 
     @Test
     public void testCustomPipeline() {
-        ArrayList<TernarySkystonePipeline.NormalizedRectangle> scanRegions = new ArrayList<>();
+        ArrayList<AveragingPipeline.NormalizedRectangle> scanRegions = new ArrayList<>();
         double yPosition = 0.55;
         double[] normalizedSize = {0.08, 0.10};
-        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.07,yPosition,normalizedSize[0],normalizedSize[1]));
-        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.18,yPosition,normalizedSize[0],normalizedSize[1]));
-        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.3,yPosition,normalizedSize[0],normalizedSize[1]));
-        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.35,yPosition+0.1,normalizedSize[0],normalizedSize[1]));
-        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.5,yPosition,normalizedSize[0],normalizedSize[1]));
-        scanRegions.add(new TernarySkystonePipeline.NormalizedRectangle(0.75,yPosition,normalizedSize[0],normalizedSize[1]));
-        TernarySkystonePipeline testPipeline = new AveragingPipeline(scanRegions);
+        scanRegions.add(new NormalizedRectangle(0.07,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new NormalizedRectangle(0.18,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new NormalizedRectangle(0.3,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new NormalizedRectangle(0.35,yPosition+0.1,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new NormalizedRectangle(0.5,yPosition,normalizedSize[0],normalizedSize[1]));
+        scanRegions.add(new NormalizedRectangle(0.75,yPosition,normalizedSize[0],normalizedSize[1]));
+        AveragingPipeline testPipeline = new AveragingPipeline(scanRegions);
         Mat outputMat = testPipeline.processFrame(input);
         Imgcodecs.imwrite(IMAGE_WRITE_PATH + "pipeline_custom.jpg",outputMat);
         testPipeline.getStatus();
