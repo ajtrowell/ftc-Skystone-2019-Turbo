@@ -103,14 +103,14 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         public void update() {
             super.update();
             if(stateTimer.seconds() > .5 && simple) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Simple_Start());
-            else if(stateTimer.time() > .5) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Scan_Position_A());
+            else if(stateTimer.time() > .5) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Scan_Skystones());
         }
     }
     /**
      * Loading Drive State
      * The state for scanning the first 3 stones to identify the skystone
      */
-    class Scan_Position_A extends Executive.StateBase<AutoOpmode> {
+    class Scan_Skystones extends Executive.StateBase<AutoOpmode> {
         @Override
         public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
             super.init(stateMachine);
@@ -127,7 +127,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
                     waypoints.setSkystoneDetectionPosition(0);
                 }
                 if (stateTimer.seconds() > scanDelay) {
-                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_A());
+                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_i(1));
                 }
             }
         }
@@ -136,7 +136,11 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
      * Loading Drive State
      * The state for aligning in-front of the detected skystone
      */
-    class Align_Skystone_A extends Executive.StateBase<AutoOpmode> {
+    class Align_Skystone_i extends Executive.StateBase<AutoOpmode> {
+        public Align_Skystone_i(int iteration) {
+            super(iteration);
+        }
+
         @Override
         public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
             super.init(stateMachine);
@@ -147,10 +151,13 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         @Override
         public void update() {
             super.update();
-
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_A), getDriveScale(stateTimer) * driveSpeed);
+            switch (getIteration()){
+                case 1: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_A), getDriveScale(stateTimer) * driveSpeed); break;
+                case 2: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_B), getDriveScale(stateTimer) * driveSpeed); break;
+                default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
+            }
             if(arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Grab_Skystone_A());
+                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Grab_Skystone_i(getIteration()));
             }
         }
     }
@@ -158,17 +165,26 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
      * Loading Drive State
      * The state for grabbing the detected skystone
      */
-    class Grab_Skystone_A extends Executive.StateBase<AutoOpmode> {
+    class Grab_Skystone_i extends Executive.StateBase<AutoOpmode> {
+        public Grab_Skystone_i(int iteration) {
+            super(iteration);
+        }
+
         @Override
         public void update() {
             super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(GRAB_SKYSTONE_A), getDriveScale(stateTimer) * driveSpeed);
+            switch(getIteration()) {
+                case 1: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(GRAB_SKYSTONE_A), getDriveScale(stateTimer) * driveSpeed); break;
+                case 2: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(GRAB_SKYSTONE_B), getDriveScale(stateTimer) * driveSpeed); break;
+                default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
+            }
+
             if(arrived) {
                 if(!stateMachine.getCurrentStates(ARM).equals("Lower_Close_Claw")) {
                     stateMachine.changeState(ARM, new Lower_Close_Claw());
                 }
                 if(stateMachine.getStateReference(ARM).arrived) {
-                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Backup_Skystone_A());
+                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Backup_Skystone_i(getIteration()));
                 }
             }
         }
@@ -177,7 +193,11 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
      * Loading Drive State
      * The state for backing up from the detected skystone to avoid knocking other stones over
      */
-    class Backup_Skystone_A extends Executive.StateBase<AutoOpmode> {
+    class Backup_Skystone_i extends Executive.StateBase<AutoOpmode> {
+        public Backup_Skystone_i(int iteration) {
+            super(iteration);
+        }
+
         @Override
         public void update() {
             super.update();
@@ -187,9 +207,13 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
             }
             if (stateTimer.seconds() > scanDelay) {
                 if (stateMachine.getStateReference(ARM).arrived) {
-                    arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_A), getDriveScale(stateTimer) * driveSpeed);
+                    switch (getIteration()) {
+                        case 1: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_A), getDriveScale(stateTimer) * driveSpeed); break;
+                        case 2: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_B), getDriveScale(stateTimer) * driveSpeed); break;
+                        default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
+                    }
                     if (arrived) {
-                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Build_Zone_A());
+                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Build_Zone_i(getIteration()));
                     }
                 }
             }
@@ -199,24 +223,36 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
      * Loading Drive State
      * The state for driving to the build zone
      */
-    class Build_Zone_A extends Executive.StateBase<AutoOpmode> {
+    class Build_Zone_i extends Executive.StateBase<AutoOpmode> {
+        public Build_Zone_i(int iteration) {
+            super(iteration);
+        }
+
         @Override
         public void update() {
             super.update();
             arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(BUILD_ZONE), getDriveScale(stateTimer) * driveSpeed);
 
             if(arrived) {
-                if(dropStones) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Drop_Skystone_A());
-                else stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Foundation_A());
+                if(dropStones) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Drop_Skystone_i(getIteration()));
+                else stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Foundation_i(getIteration()));
             }
         }
     }
 
-    class Drop_Skystone_A extends Executive.StateBase<AutoOpmode> {
+    class Drop_Skystone_i extends Executive.StateBase<AutoOpmode> {
+        public Drop_Skystone_i(int iteration) {
+            super(iteration);
+        }
+
         @Override
         public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
             super.init(stateMachine);
-            stateMachine.changeState(ARM, new Drop_Off_Skystone_A());
+            switch( getIteration()) {
+                case 1: stateMachine.changeState(ARM, new Drop_Off_Skystone_A()); break;
+                case 2: stateMachine.changeState(ARM, new Drop_Off_Skystone_B()); break;
+                default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
+            }
         }
 
         @Override
@@ -228,7 +264,11 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         }
     }
 
-    class Align_Foundation_A extends Executive.StateBase<AutoOpmode> {
+    class Align_Foundation_i extends Executive.StateBase<AutoOpmode> {
+        public Align_Foundation_i(int iteration) {
+            super(iteration);
+        }
+
         @Override
         public void update() {
             super.update();
