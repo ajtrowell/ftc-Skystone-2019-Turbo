@@ -66,13 +66,14 @@ public class Waypoints {
 
     public enum LocationLoading {
         INITIAL_POSITION,
-        SCAN_POSITION_A_0,
-        SCAN_POSITION_A_1,
         GRAB_SKYSTONE_A,
         ALIGNMENT_POSITION_A,
-        BUILD_ZONE,
         GRAB_SKYSTONE_B,
         ALIGNMENT_POSITION_B,
+        GRAB_SKYSTONE_C,
+        ALIGNMENT_POSITION_C,
+        STONE_5_SECONDARY_ALIGN,
+        BUILD_ZONE,
         FOUNDATION_ALIGNMENT,
         FOUNDATION_DROP_OFF,
         BRIDGE_ALIGNMENT_OUTER,
@@ -166,13 +167,26 @@ public class Waypoints {
          * Blue Loading Waypoints
          */
         blueLoading.put(LocationLoading.INITIAL_POSITION,new Navigation2D(-tileBody - robotSidePadding, halfField - robotBackPadding + 1, degreesToRadians(-90)));
-        blueLoading.put(LocationLoading.SCAN_POSITION_A_0, blueStoneAlignmentLocations.get(2).copy());
-        blueLoading.put(LocationLoading.SCAN_POSITION_A_1, blueStoneAlignmentLocations.get(1).copy());
         blueLoading.put(LocationLoading.GRAB_SKYSTONE_A, blueStonePickupLocations.get(skystoneDetectionPosition).copy());
         blueLoading.put(LocationLoading.ALIGNMENT_POSITION_A, blueStoneAlignmentLocations.get(skystoneDetectionPosition).copy());
         blueLoading.put(LocationLoading.BUILD_ZONE, new Navigation2D(tileBody, blueStoneAlignmentLocations.get(skystoneDetectionPosition).y, degreesToRadians(-90)));
-        blueLoading.put(LocationLoading.GRAB_SKYSTONE_B, new Navigation2D(blueStonePickupLocations.get(skystoneDetectionPosition + 3).x, blueStonePickupLocations.get(skystoneDetectionPosition + 3).y - 7, degreesToRadians((-90))));
+        blueLoading.put(LocationLoading.GRAB_SKYSTONE_B, blueStonePickupLocations.get(skystoneDetectionPosition + 3).copy().addAndReturn(0,0,0));
         blueLoading.put(LocationLoading.ALIGNMENT_POSITION_B, blueStoneAlignmentLocations.get(skystoneDetectionPosition + 3).copy());
+        if(skystoneDetectionPosition == 2) { // Prevent wall hit
+            if(true) { // Normal, adjacent to wall
+                blueLoading.get(LocationLoading.ALIGNMENT_POSITION_B).x = -halfField + robotSidePadding;
+                blueLoading.get(LocationLoading.GRAB_SKYSTONE_B).x = -halfField + robotSidePadding;
+            } else { // Rotated 90 degrees, moving through blocks.
+                blueLoading.put(LocationLoading.ALIGNMENT_POSITION_B, blueStoneAlignmentLocations.get(3));
+                blueLoading.put(LocationLoading.GRAB_SKYSTONE_B, new Navigation2D(blueStoneLocations.get(5).copy().addAndReturn(grabOffset_X_Forward + 2, 0, Math.toRadians(-90))));
+            }
+        }
+        blueLoading.put(LocationLoading.STONE_5_SECONDARY_ALIGN, blueLoading.put(LocationLoading.GRAB_SKYSTONE_B, new Navigation2D(blueStoneLocations.get(5).copy().addAndReturn(grabOffset_X_Forward + 2 + 3, 0, Math.toRadians(-90)))));
+        int indexC; // Stone Index if going for a third stone.
+        if(skystoneDetectionPosition == 0) {indexC = 1;}
+        else {indexC = 0;}
+        blueLoading.put(LocationLoading.GRAB_SKYSTONE_C, blueStonePickupLocations.get(indexC).copy().addAndReturn(0,0,0));
+        blueLoading.put(LocationLoading.ALIGNMENT_POSITION_C, blueStoneAlignmentLocations.get(indexC).copy());
         blueLoading.put(LocationLoading.FOUNDATION_ALIGNMENT, new Navigation2D(45, blueStoneAlignmentLocations.get(0).y, degreesToRadians(-90)));
         blueLoading.put(LocationLoading.FOUNDATION_DROP_OFF, new Navigation2D(45, 26.74 + 4, degreesToRadians(-90)));
         blueLoading.put(LocationLoading.BRIDGE_ALIGNMENT_OUTER, new Navigation2D(0, halfField - tileTabs - robotSidePadding, degreesToRadians(-90)));
