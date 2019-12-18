@@ -20,6 +20,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
     private boolean simple;
     private boolean parkInner;
     private boolean dropStones;
+    private int blocksToDrop;
 
     private double scanDelay = 0.5;
     private double liftSpeed = 1;
@@ -48,6 +49,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         simple = opMode.SimpleAuto.get();
         parkInner = opMode.ParkInner.get();
         dropStones = opMode.DropStones.get();
+        blocksToDrop = (int) Math.round(opMode.BlocksToDrop.get());
     }
 
 
@@ -120,14 +122,22 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         @Override
         public void update() {
             super.update();
-            if(stateMachine.getStateReference(ARM).arrived) {
+            if (stateMachine.getStateReference(ARM).arrived) {
                 if (opMode.skystoneDetector != null) {
                     waypoints.setSkystoneDetectionPosition(opMode.skystoneDetector.getSkystoneIndex());
                 } else {
                     waypoints.setSkystoneDetectionPosition(0);
                 }
                 if (stateTimer.seconds() > scanDelay) {
-                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_i(1));
+                    if (blocksToDrop > 0) {
+                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_i(1));
+                    } else {
+                        if (parkInner) {
+                            stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner());
+                        } else {
+                            stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Outer());
+                        }
+                    }
                 }
             }
         }
@@ -154,6 +164,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
             switch (getIteration()){
                 case 1: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_A), getDriveScale(stateTimer) * driveSpeed); break;
                 case 2: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_B), getDriveScale(stateTimer) * driveSpeed); break;
+                case 3: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_C), getDriveScale(stateTimer) * driveSpeed); break;
                 default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
             }
             if(arrived) {
@@ -176,6 +187,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
             switch(getIteration()) {
                 case 1: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(GRAB_SKYSTONE_A), getDriveScale(stateTimer) * driveSpeed); break;
                 case 2: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(GRAB_SKYSTONE_B), getDriveScale(stateTimer) * driveSpeed); break;
+                case 3: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(GRAB_SKYSTONE_C), getDriveScale(stateTimer) * driveSpeed); break;
                 default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
             }
 
@@ -210,6 +222,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
                     switch (getIteration()) {
                         case 1: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_A), getDriveScale(stateTimer) * driveSpeed); break;
                         case 2: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_B), getDriveScale(stateTimer) * driveSpeed); break;
+                        case 3: arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_C), getDriveScale(stateTimer) * driveSpeed); break;
                         default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
                     }
                     if (arrived) {
@@ -250,7 +263,8 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
             super.init(stateMachine);
             switch( getIteration()) {
                 case 1: stateMachine.changeState(ARM, new Drop_Off_Skystone_A()); break;
-                case 2: stateMachine.changeState(ARM, new Drop_Off_Skystone_B()); break;
+                case 2:  // TODO: Adjust ARM behavior.
+                case 3: stateMachine.changeState(ARM, new Drop_Off_Skystone_B()); break;
                 default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
             }
         }
@@ -259,10 +273,14 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         public void update() {
             super.update();
             if(stateMachine.getStateReference(ARM).arrived) {
-                switch (getIteration()) {
-                    case 1: stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_i(2)); break;
-                    case 2: stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner()); break;
-                    default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
+                if(blocksToDrop > getIteration()) {
+                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_i(getIteration() + 1));
+                } else {
+                    if (parkInner) {
+                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner());
+                    } else {
+                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Outer());
+                    }
                 }
             }
         }
@@ -299,6 +317,7 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
                         }
                         break;
                     case 2:
+                    case 3: // TODO: Adjust behavior
                         if(!stateMachine.getCurrentStates(ARM).equals("Place_On_Foundation_B")) {
                             stateMachine.changeState(ARM, new Place_On_Foundation_B());
                         }
@@ -322,7 +341,16 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
             arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(FOUNDATION_ALIGNMENT), getDriveScale(stateTimer) * driveSpeed);
             if(arrived) {
                 stateMachine.changeState(ARM, new Vertical_Claw());
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner());
+
+                if(blocksToDrop > getIteration()) {
+                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_i(getIteration() + 1));
+                } else {
+                    if (parkInner) {
+                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner());
+                    } else {
+                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Outer());
+                    }
+                }
             }
         }
     }
@@ -331,18 +359,27 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
 
 
     class Align_Outer extends Executive.StateBase<AutoOpmode> {
+        boolean isPrealignmentComplete = false; // Get on the same y and theta as the destination.
+        Navigation2D preAlignmentWaypoint;
         @Override
         public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
             super.init(stateMachine);
+            preAlignmentWaypoint = waypoints.loading.get(BRIDGE_ALIGNMENT_OUTER).copyAndLabel("PreAlign Inner");
+            preAlignmentWaypoint.x = opMode.mecanumNavigation.currentPosition.x;
+            stateMachine.changeState(ARM, new Vertical_Claw());
             opMode.updateMecanumHeadingFromGyroNow();
         }
 
         @Override
         public void update() {
             super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(BRIDGE_ALIGNMENT_OUTER), getDriveScale(stateTimer) * driveSpeed);
-            if(arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Park_Inner());
+            if(!isPrealignmentComplete) {
+                isPrealignmentComplete = opMode.autoDrive.driveToPositionTranslateOnly(preAlignmentWaypoint, getDriveScale(stateTimer) * driveSpeed);
+            } else {
+                arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(BRIDGE_ALIGNMENT_OUTER), getDriveScale(stateTimer) * driveSpeed);
+                if (arrived) {
+                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Park_Outer());
+                }
             }
         }
     }
@@ -366,12 +403,27 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
     }
 
     class Align_Inner extends Executive.StateBase<AutoOpmode> {
+        boolean isPrealignmentComplete = false; // Get on the same y and theta as the destination.
+        Navigation2D preAlignmentWaypoint;
+        @Override
+        public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
+            super.init(stateMachine);
+            preAlignmentWaypoint = waypoints.loading.get(BRIDGE_ALIGNMENT_INNER).copyAndLabel("PreAlign Inner");
+            preAlignmentWaypoint.x = opMode.mecanumNavigation.currentPosition.x;
+            stateMachine.changeState(ARM, new Vertical_Claw());
+            opMode.updateMecanumHeadingFromGyroNow();
+        }
+
         @Override
         public void update() {
             super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(BRIDGE_ALIGNMENT_INNER), getDriveScale(stateTimer) * driveSpeed);
-            if(arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Park_Inner());
+            if(!isPrealignmentComplete) {
+                isPrealignmentComplete = opMode.autoDrive.driveToPositionTranslateOnly(preAlignmentWaypoint, getDriveScale(stateTimer) * driveSpeed);
+            } else {
+                arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(BRIDGE_ALIGNMENT_INNER), getDriveScale(stateTimer) * driveSpeed);
+                if (arrived) {
+                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Park_Inner());
+                }
             }
         }
     }

@@ -92,6 +92,7 @@ public class StateMachineTest {
         opMode.setDropStones(true);
         opMode.setParkInner(false);
         opMode.setSimpleAuto(false);
+        opMode.BlocksToDrop.set(2.0);
         opMode.setSkystoneIndex(2);
 
         robotStateContext = new RobotStateContext(opMode,Color.Ftc.RED, RobotHardware.StartPosition.FIELD_LOADING);
@@ -109,6 +110,7 @@ public class StateMachineTest {
         opMode.setDropStones(true);
         opMode.setParkInner(false);
         opMode.setSimpleAuto(true);
+        opMode.BlocksToDrop.set(2.0);
         opMode.setSkystoneIndex(0);
         robotStateContext.init(); // Required to apply modifications to interactive init settings.
         simulateStateMachine(false, 2, 40.0, .02);
@@ -123,6 +125,7 @@ public class StateMachineTest {
         opMode.setDropStones(false);
         opMode.setParkInner(false);
         opMode.setSimpleAuto(false);
+        opMode.BlocksToDrop.set(3.0);
         opMode.setSkystoneIndex(1);
         robotStateContext.init(); // Required to apply modifications to interactive init settings.
         simulateStateMachine(false, 2, 40.0, .02);
@@ -137,6 +140,23 @@ public class StateMachineTest {
         opMode.setDropStones(true);
         opMode.setParkInner(false);
         opMode.setSimpleAuto(false);
+        opMode.BlocksToDrop.set(3.0);
+        opMode.setSkystoneIndex(2);
+        robotStateContext.init(); // Required to apply modifications to interactive init settings.
+        simulateStateMachine(false, 2, 40.0, .02);
+    }
+
+
+    @Test
+    public void parkOuter_0Stone_DropStones_Index2() {
+        initialize();
+        // Interactive Init settings
+        opMode.PauseBeforeState.set(false);
+        opMode.setDriveSpeed(1.0);
+        opMode.setDropStones(true);
+        opMode.setParkInner(false);
+        opMode.setSimpleAuto(false);
+        opMode.BlocksToDrop.set(0.0);
         opMode.setSkystoneIndex(2);
         robotStateContext.init(); // Required to apply modifications to interactive init settings.
         simulateStateMachine(false, 2, 40.0, .02);
