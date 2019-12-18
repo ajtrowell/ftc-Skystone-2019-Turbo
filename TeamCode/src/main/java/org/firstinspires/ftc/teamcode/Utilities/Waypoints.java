@@ -73,7 +73,7 @@ public class Waypoints {
         GRAB_SKYSTONE_C,
         ALIGNMENT_POSITION_C,
         STONE_5_SECONDARY_ALIGN,
-        BUILD_ZONE,
+        SKYSTONE_DROP_ZONE,
         FOUNDATION_ALIGNMENT,
         FOUNDATION_DROP_OFF,
         BRIDGE_ALIGNMENT_OUTER,
@@ -169,7 +169,7 @@ public class Waypoints {
         blueLoading.put(LocationLoading.INITIAL_POSITION,new Navigation2D(-tileBody - robotSidePadding, halfField - robotBackPadding + 1, degreesToRadians(-90)));
         blueLoading.put(LocationLoading.GRAB_SKYSTONE_A, blueStonePickupLocations.get(skystoneDetectionPosition).copy());
         blueLoading.put(LocationLoading.ALIGNMENT_POSITION_A, blueStoneAlignmentLocations.get(skystoneDetectionPosition).copy());
-        blueLoading.put(LocationLoading.BUILD_ZONE, new Navigation2D(tileBody, blueStoneAlignmentLocations.get(skystoneDetectionPosition).y, degreesToRadians(-90)));
+        blueLoading.put(LocationLoading.SKYSTONE_DROP_ZONE, new Navigation2D(tileBody, blueStoneAlignmentLocations.get(skystoneDetectionPosition).y, degreesToRadians(-90)));
         blueLoading.put(LocationLoading.GRAB_SKYSTONE_B, blueStonePickupLocations.get(skystoneDetectionPosition + 3).copy().addAndReturn(0,0,0));
         blueLoading.put(LocationLoading.ALIGNMENT_POSITION_B, blueStoneAlignmentLocations.get(skystoneDetectionPosition + 3).copy());
         if(skystoneDetectionPosition == 2) { // Prevent wall hit

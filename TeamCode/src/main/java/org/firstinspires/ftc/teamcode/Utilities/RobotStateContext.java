@@ -213,7 +213,8 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
                         default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
                     }
                     if (arrived) {
-                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Build_Zone_i(getIteration()));
+                        if(dropStones) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Skystone_Drop_Zone_i(getIteration()));
+                        else stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Foundation_i(getIteration()));
                     }
                 }
             }
@@ -223,19 +224,18 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
      * Loading Drive State
      * The state for driving to the build zone
      */
-    class Build_Zone_i extends Executive.StateBase<AutoOpmode> {
-        public Build_Zone_i(int iteration) {
+    class Skystone_Drop_Zone_i extends Executive.StateBase<AutoOpmode> {
+        public Skystone_Drop_Zone_i(int iteration) {
             super(iteration);
         }
 
         @Override
         public void update() {
             super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(BUILD_ZONE), getDriveScale(stateTimer) * driveSpeed);
+            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(SKYSTONE_DROP_ZONE), getDriveScale(stateTimer) * driveSpeed);
 
             if(arrived) {
-                if(dropStones) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Drop_Skystone_i(getIteration()));
-                else stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Foundation_i(getIteration()));
+                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Drop_Skystone_i(getIteration()));
             }
         }
     }
