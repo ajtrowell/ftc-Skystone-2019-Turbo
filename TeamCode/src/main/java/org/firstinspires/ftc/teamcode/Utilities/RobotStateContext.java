@@ -259,7 +259,11 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         public void update() {
             super.update();
             if(stateMachine.getStateReference(ARM).arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_B());
+                switch (getIteration()) {
+                    case 1: stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Skystone_i(2)); break;
+                    case 2: stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner()); break;
+                    default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
+                }
             }
         }
     }
@@ -274,28 +278,44 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
             super.update();
             arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(FOUNDATION_ALIGNMENT), getDriveScale(stateTimer) * driveSpeed);
             if(arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Place_Foundation_A());
+                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Place_Foundation_i(getIteration()));
             }
         }
     }
 
-    class Place_Foundation_A extends Executive.StateBase<AutoOpmode> {
+    class Place_Foundation_i extends Executive.StateBase<AutoOpmode> {
+        public Place_Foundation_i(int iteration) {
+            super(iteration);
+        }
         @Override
         public void update() {
             super.update();
             arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(FOUNDATION_DROP_OFF), getDriveScale(stateTimer) * driveSpeed);
             if(arrived) {
-                if(!stateMachine.getCurrentStates(ARM).equals("Place_On_Foundation_A")) {
-                    stateMachine.changeState(ARM, new Place_On_Foundation_A());
+                switch (getIteration()) {
+                    case 1:
+                        if(!stateMachine.getCurrentStates(ARM).equals("Place_On_Foundation_A")) {
+                            stateMachine.changeState(ARM, new Place_On_Foundation_A());
+                        }
+                        break;
+                    case 2:
+                        if(!stateMachine.getCurrentStates(ARM).equals("Place_On_Foundation_B")) {
+                            stateMachine.changeState(ARM, new Place_On_Foundation_B());
+                        }
+                        break;
+                    default: throw new RuntimeException(this.getClass().toString() + ":  Invalid iteration.");
                 }
                 if(stateMachine.getStateReference(ARM).arrived) {
-                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Backup_Foundation_A());
+                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Backup_Foundation_i(getIteration()));
                 }
             }
         }
     }
 
-    class Backup_Foundation_A extends Executive.StateBase<AutoOpmode> {
+    class Backup_Foundation_i extends Executive.StateBase<AutoOpmode> {
+        public Backup_Foundation_i(int iteration) {
+            super(iteration);
+        }
         @Override
         public void update() {
             super.update();
@@ -307,142 +327,8 @@ public class RobotStateContext implements Executive.RobotStateMachineContextInte
         }
     }
 
-    /**
-     * Loading Drive State
-     * The state for aligning in-front of the detected skystone
-     */
-    class Align_Skystone_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void update() {
-            super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_B), getDriveScale(stateTimer) * driveSpeed);
-            if(arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Grab_Skystone_B());
-            }
-        }
-    }
-    /**
-     * Loading Drive State
-     * The state for grabbing the detected skystone
-     */
-    class Grab_Skystone_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void update() {
-            super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(GRAB_SKYSTONE_B), getDriveScale(stateTimer) * driveSpeed);
-            if(arrived) {
-                if(!stateMachine.getCurrentStates(ARM).equals("Lower_Close_Claw")) {
-                    stateMachine.changeState(ARM, new Lower_Close_Claw());
-                }
-                if(stateMachine.getStateReference(ARM).arrived) {
-                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Backup_Skystone_B());
-                }
-            }
-        }
-    }
-    /**
-     * Loading Drive State
-     * The state for backing up from the detected skystone to avoid knocking other stones over
-     */
-    class Backup_Skystone_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void update() {
-            super.update();
 
-            if(!stateMachine.getCurrentStates(ARM).equals("Raise_Close_Claw")) {
-                stateMachine.changeState(ARM, new Raise_Close_Claw());
-            }
-            if (stateTimer.seconds() > 0.25) {
-                if (stateMachine.getStateReference(ARM).arrived) {
-                    arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(ALIGNMENT_POSITION_B), getDriveScale(stateTimer) * driveSpeed);
-                    if (arrived) {
-                        stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Build_Zone_B());
-                    }
-                }
-            }
-        }
-    }
 
-    class Build_Zone_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void update() {
-            super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(BUILD_ZONE), getDriveScale(stateTimer) * driveSpeed);
-
-            if(arrived) {
-                if(!dropStones) stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Foundation_B());
-                else stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Drop_Skystone_B());
-            }
-        }
-    }
-
-    class Drop_Skystone_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
-            super.init(stateMachine);
-            stateMachine.changeState(ARM, new Drop_Off_Skystone_B());
-        }
-
-        @Override
-        public void update() {
-            super.update();
-
-            if(stateMachine.getStateReference(ARM).arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner());
-            }
-        }
-    }
-
-    class Align_Foundation_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void update() {
-            super.update();
-            if(!stateMachine.getCurrentStates(ARM).equals("Place_On_Foundation_B")) {
-                stateMachine.changeState(ARM, new Place_On_Foundation_B());
-            }
-            if(stateMachine.getStateReference(ARM).arrived) {
-                arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(FOUNDATION_ALIGNMENT), getDriveScale(stateTimer) * driveSpeed);
-                if (arrived) {
-                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Place_Foundation_B());
-                }
-            }
-        }
-    }
-
-    class Place_Foundation_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void update() {
-            super.update();
-            // Need to change
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(FOUNDATION_DROP_OFF), getDriveScale(stateTimer) * driveSpeed);
-            if(arrived) {
-                if(!stateMachine.getCurrentStates(ARM).equals("openClaw")) {
-                    stateMachine.changeState(ARM, new openClaw());
-                    stateTimer.reset();
-                }
-                if(stateTimer.seconds() > .5) {
-                    stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Backup_Foundation_B());
-                }
-            }
-        }
-    }
-
-    class Backup_Foundation_B extends Executive.StateBase<AutoOpmode> {
-        @Override
-        public void init(Executive.StateMachine<AutoOpmode> stateMachine) {
-            super.init(stateMachine);
-            opMode.updateMecanumHeadingFromGyroNow();
-        }
-
-        @Override
-        public void update() {
-            super.update();
-            arrived = opMode.autoDrive.driveToPositionTranslateOnly(waypoints.loading.get(FOUNDATION_ALIGNMENT), getDriveScale(stateTimer) * driveSpeed);
-            if(arrived) {
-                stateMachine.changeState(opMode.shouldContinue(), DRIVE, new Align_Inner());
-            }
-        }
-    }
 
     class Align_Outer extends Executive.StateBase<AutoOpmode> {
         @Override
